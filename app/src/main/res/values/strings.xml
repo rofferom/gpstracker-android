@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">GpsTracker</string>
+
+    <string name="startRecording">Start recording</string>
+    <string name="stopRecording">Stop recording</string>
+
+    <string name="textViewStateStarted">State: Started</string>
+    <string name="textViewStateStopped">State: Stopped</string>
+
+    <string name="textViewPositionNone">No positions recorded</string>
+    <string name="textViewPosition">Positions: %d</string>
+
+    <string name="textViewLastPositionNone">No last position</string>
+    <string name="textViewLastPosition">Last position: %s</string>
+</resources>
