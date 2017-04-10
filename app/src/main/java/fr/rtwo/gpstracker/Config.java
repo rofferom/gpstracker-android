@@ -7,6 +7,9 @@ public class Config {
         return ourInstance;
     }
 
+    private Config() {
+    }
+
     // GPS configuration
     public float mGpsAccuracy = 10.0f; // meters
     public long mGpsAcqPeriod = 60; // seconds
