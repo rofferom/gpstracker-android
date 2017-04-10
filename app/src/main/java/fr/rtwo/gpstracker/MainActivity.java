@@ -45,7 +45,7 @@ public class MainActivity extends AppCompatActivity {
         tv.setText(R.string.textViewStateStopped);
 
         // Stop battery acquisition
-        mBatteryReader.start();
+        mBatteryReader.stop();
     }
 
     @Override
