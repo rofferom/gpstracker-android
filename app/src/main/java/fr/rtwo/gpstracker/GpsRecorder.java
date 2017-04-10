@@ -13,10 +13,24 @@ import android.util.Log;
 public class GpsRecorder extends Service {
     private static final String TAG = "GpsRecorder";
 
+    private enum State {
+        stopped,
+        started
+    }
+
+    // General attributes
+    private Config mConfig = Config.getInstance();
+    private State mState = State.stopped;
+
+    // GPS acquisition
     private LocationManager mLocationManager;
     private LocationListener mLocationListener;
+    private Location mLastLocation = null;
+    private Timer mTimeoutTimer = new Timer();
+    private Timer mNextAcqTimer = new Timer();
 
-    private LocationDatabase mLocationDb;
+    // Output attributes
+    private LocationDatabase mLocationDb = LocationDatabase.getInstance();
     private EventLogger mEventLogger;
 
     public GpsRecorder() {
@@ -31,9 +45,6 @@ public class GpsRecorder extends Service {
     public void onCreate() {
         Log.i(TAG, "onCreate()");
 
-        // Get reference to location database
-        mLocationDb = LocationDatabase.getInstance();
-
         // Open record file
         mEventLogger = new EventLogger();
         mEventLogger.open();
@@ -44,10 +55,7 @@ public class GpsRecorder extends Service {
         // Define a listener that responds to location updates
         mLocationListener = new LocationListener() {
             public void onLocationChanged(Location location) {
-                Log.d(TAG, "New position: " + location.getLatitude() + ", " + location.getLongitude());
-
-                mLocationDb.addLocation(location);
-                mEventLogger.recordLocation(location);
+                onNewLocation(location);
             }
 
             public void onStatusChanged(String provider, int status, Bundle extras) {}
@@ -56,7 +64,6 @@ public class GpsRecorder extends Service {
 
             public void onProviderDisabled(String provider) {}
         };
-
     }
 
     @Override
@@ -70,11 +77,7 @@ public class GpsRecorder extends Service {
         mEventLogger.close();
         mEventLogger = null;
 
-        try {
-            mLocationManager.removeUpdates(mLocationListener);
-        } catch (SecurityException e) {
-            Log.i(TAG, "mLocationManager.removeUpdates() rejected : " + e.getMessage());
-        }
+        stopAcquisition();
 
         super.onDestroy();
     }
@@ -83,12 +86,87 @@ public class GpsRecorder extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.i(TAG, "onStartCommand()");
 
-        try {
-            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 60 * 1000, 0, mLocationListener);
-        } catch (SecurityException e) {
-            Log.i(TAG, "mLocationManager.requestLocationUpdates() rejected : " + e.getMessage());
-        }
+        startAcquisition();
 
         return START_STICKY;
+    }
+
+    private void startAcquisition() {
+        Log.i(TAG, "Start acquisition");
+
+        try {
+            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 0, mLocationListener);
+        } catch (SecurityException e) {
+            Log.i(TAG, "mLocationManager.requestLocationUpdates() rejected : " + e.getMessage());
+            return;
+        }
+
+        mState = State.started;
+
+        // Arm timeout timer
+        mTimeoutTimer.set(
+            mTimeoutTimer.new Listener() {
+                @Override
+                void onExpired() {
+                    onLocationTimeout();
+                }
+            },
+            mConfig.mGpsAcqTimeout * 1000);
+    }
+
+    private void stopAcquisition() {
+        Log.i(TAG, "Stop acquisition");
+
+        // Clear current acquisition context
+        try {
+            mLocationManager.removeUpdates(mLocationListener);
+        } catch (SecurityException e) {
+            Log.i(TAG, "mLocationManager.removeUpdates() rejected : " + e.getMessage());
+        }
+
+        mState = State.stopped;
+        mLastLocation = null;
+
+        mTimeoutTimer.clear();
+        mNextAcqTimer.clear();
+    }
+
+    private void stopAndQueueNewAcquisition() {
+        stopAcquisition();
+
+        mNextAcqTimer.set(
+            mNextAcqTimer.new Listener() {
+                @Override
+                void onExpired() {
+                    startAcquisition();
+                }
+            },
+            mConfig.mGpsAcqPeriod * 1000);
+    }
+
+    private void onNewLocation(Location location) {
+        float accuracy = location.getAccuracy();
+
+        Log.d(TAG, "New position: " + location.getLatitude() + ", " + location.getLongitude());
+
+        if (accuracy <= mConfig.mGpsAccuracy) {
+            Log.d(TAG, "Position stored (accuracy : " + accuracy + ")");
+
+            mLocationDb.addLocation(location);
+            mEventLogger.recordLocation(location);
+
+            stopAndQueueNewAcquisition();
+        } else {
+            Log.d(TAG, "Better accuracy required (accuracy : " + accuracy + ")");
+            mLastLocation = location;
+        }
+    }
+
+    private void onLocationTimeout() {
+        float accuracy = mLastLocation != null ? mLastLocation.getAccuracy() : Float.NaN;
+
+        Log.i(TAG, "Location acquisition timeout (better accuracy : " + accuracy + ")");
+
+        stopAndQueueNewAcquisition();
     }
 }
