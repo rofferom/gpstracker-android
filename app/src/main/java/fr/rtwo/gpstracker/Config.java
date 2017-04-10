@@ -7,8 +7,11 @@ public class Config {
         return ourInstance;
     }
 
+    // GPS configuration
     public float mGpsAccuracy = 10.0f; // meters
     public long mGpsAcqPeriod = 60; // seconds
     public long mGpsAcqTimeout = 30; // seconds
 
+    // Battery configuration
+    public long mBatteryAcqPeriod = 60; // seconds
 }

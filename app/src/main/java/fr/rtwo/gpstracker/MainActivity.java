@@ -15,27 +15,37 @@ import java.util.Date;
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
 
+    private BatteryReader mBatteryReader;
+
     private LocationDatabase mLocationDb;
     private LocationDatabase.Listener mLocationListener;
 
     public void startGpsRecording(View v) {
         Log.i(TAG, "Start GPS recording");
 
+        // Start GPS acquisition
         Intent intent = new Intent(this, GpsRecorder.class);
         startService(intent);
 
         TextView tv = (TextView) findViewById(R.id.state);
         tv.setText(R.string.textViewStateStarted);
+
+        // Start battery acquisition
+        mBatteryReader.start();
     }
 
     public void stopGpsRecording(View v) {
         Log.i(TAG, "Stop GPS recording");
 
+        // Stop GPS acquisition
         Intent intent = new Intent(this, GpsRecorder.class);
         stopService(intent);
 
         TextView tv = (TextView) findViewById(R.id.state);
         tv.setText(R.string.textViewStateStopped);
+
+        // Stop battery acquisition
+        mBatteryReader.start();
     }
 
     @Override
@@ -44,6 +54,9 @@ public class MainActivity extends AppCompatActivity {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        // Create battery reader
+        mBatteryReader = new BatteryReader(this);
 
         // Get reference to location database
         mLocationDb = LocationDatabase.getInstance();
