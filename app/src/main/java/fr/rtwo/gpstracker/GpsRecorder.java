@@ -20,6 +20,7 @@ public class GpsRecorder extends Service {
 
     // General attributes
     private Config mConfig = Config.getInstance();
+    private Telemetry mTelemetry = Telemetry.getInstance();
     private State mState = State.stopped;
 
     // GPS acquisition
@@ -93,6 +94,7 @@ public class GpsRecorder extends Service {
 
     private void startAcquisition() {
         Log.i(TAG, "Start acquisition");
+        mTelemetry.write(Telemetry.GPS, "StartAcq");
 
         try {
             mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 0, mLocationListener);
@@ -116,6 +118,7 @@ public class GpsRecorder extends Service {
 
     private void stopAcquisition() {
         Log.i(TAG, "Stop acquisition");
+        mTelemetry.write(Telemetry.GPS, "StopAcq");
 
         // Clear current acquisition context
         try {
@@ -149,9 +152,20 @@ public class GpsRecorder extends Service {
 
         Log.d(TAG, "New position: " + location.getLatitude() + ", " + location.getLongitude());
 
+        mTelemetry.write(
+                Telemetry.GPS,
+                String.format(
+                        "ts:%d;lat:%f;long:%f;accuracy:%f;speed:%f",
+                        location.getTime(),
+                        location.getLatitude(),
+                        location.getLongitude(),
+                        location.getAccuracy(),
+                        location.getSpeed()));
+
         if (accuracy <= mConfig.mGpsAccuracy) {
             Log.d(TAG, "Position stored (accuracy : " + accuracy + ")");
 
+            mTelemetry.write(Telemetry.GPS, "ValidPoint");
             mLocationDb.addLocation(location);
             mEventLogger.recordLocation(location);
 
@@ -166,6 +180,7 @@ public class GpsRecorder extends Service {
         float accuracy = mLastLocation != null ? mLastLocation.getAccuracy() : Float.NaN;
 
         Log.i(TAG, "Location acquisition timeout (better accuracy : " + accuracy + ")");
+        mTelemetry.write(Telemetry.GPS, "Timeout");
 
         stopAndQueueNewAcquisition();
     }

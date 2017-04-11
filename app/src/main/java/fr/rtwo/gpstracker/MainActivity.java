@@ -15,6 +15,7 @@ import java.util.Date;
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
 
+    private Telemetry mTelemetry = Telemetry.getInstance();
     private BatteryReader mBatteryReader;
 
     private LocationDatabase mLocationDb;
@@ -22,6 +23,10 @@ public class MainActivity extends AppCompatActivity {
 
     public void startGpsRecording(View v) {
         Log.i(TAG, "Start GPS recording");
+        mTelemetry.write(Telemetry.APP, "StartRecording");
+
+        // Open telemetry file
+        mTelemetry.open();
 
         // Start GPS acquisition
         Intent intent = new Intent(this, GpsRecorder.class);
@@ -36,6 +41,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void stopGpsRecording(View v) {
         Log.i(TAG, "Stop GPS recording");
+        mTelemetry.write(Telemetry.APP, "StopRecording");
 
         // Stop GPS acquisition
         Intent intent = new Intent(this, GpsRecorder.class);
@@ -46,6 +52,9 @@ public class MainActivity extends AppCompatActivity {
 
         // Stop battery acquisition
         mBatteryReader.stop();
+
+        // Close telemetry file
+        mTelemetry.close();
     }
 
     @Override

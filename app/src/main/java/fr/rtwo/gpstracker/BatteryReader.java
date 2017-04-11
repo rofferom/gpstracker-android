@@ -9,6 +9,7 @@ public class BatteryReader {
     private Context mContext;
     private Config mConfig = Config.getInstance();
     private Timer mTimer = new Timer();
+    private Telemetry mTelemetry = Telemetry.getInstance();
 
     public BatteryReader(Context context) {
         mContext = context;
@@ -22,6 +23,7 @@ public class BatteryReader {
         int scale = batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
 
         float batteryPct = (level / (float) scale) * 100;
+        mTelemetry.write(Telemetry.BATTERY, String.valueOf(batteryPct));
     }
 
     public boolean start() {
