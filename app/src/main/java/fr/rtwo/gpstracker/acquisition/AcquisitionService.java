@@ -118,6 +118,17 @@ public class AcquisitionService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.i(TAG, "onStartCommand()");
 
+        // Write config in telemetry file.
+        // Required to understand generated stats
+        mTelemetry.write(Telemetry.APP_TAG,
+                String.format(
+                    Telemetry.APP_CONFIG,
+                    mConfig.mGpsAccuracy,
+                    mConfig.mGpsAcqPeriod,
+                    mConfig.mGpsAcqTimeout)
+                );
+
+        // Start subcomponents
         startGpsAcq();
         mBatteryRecorder.start();
 

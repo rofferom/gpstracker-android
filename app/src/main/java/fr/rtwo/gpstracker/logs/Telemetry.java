@@ -11,6 +11,7 @@ import java.util.Date;
 
 public class Telemetry {
     static public final String APP_TAG = "APP";
+    static public final String APP_CONFIG = "Config;gpsAccuracy:%f;gpsAcqPeriod:%d;gpsAcqTimeout:%d";
 
     // GPS values
     static public final String GPS_TAG = "GPS";
