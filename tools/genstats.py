@@ -29,6 +29,30 @@ def parseAndHandleRecord(ts, recordStr, recordDescList):
 	else:
 		recordDesc.handler(ts)
 
+BatteryLevel = namedtuple('Location', ['ts', 'level'])
+
+class BatteryHandler:
+	def __init__(self):
+		self.firstRecord = None
+		self.lastRecord = None
+
+	def handleRecord(self, ts, record):
+		value = float(record)
+
+		if not self.firstRecord:
+			self.firstRecord = BatteryLevel(ts, value)
+
+		self.lastRecord = BatteryLevel(ts, value)
+
+	def displayResult(self):
+		print("Battery")
+		print("\tWent from %.02f%% to %.02f%%" % (self.firstRecord.level, self.lastRecord.level))
+
+		lost = self.firstRecord.level - self.lastRecord.level
+		strDuration = msToStrHours(self.lastRecord.ts - self.firstRecord.ts)
+
+		print("\tLost: %.02f%% in %s" % (lost, strDuration))
+
 class GpsHandlerCb:
 	def startAcq(self, ts):
 		pass
@@ -42,7 +66,7 @@ class GpsHandlerCb:
 	def newLocation(self, ts, location):
 		pass
 
-class AccuracyStats(GpsHandlerCb):
+class GpsAccuracyStats(GpsHandlerCb):
 	ChartAccuracy = namedtuple('ChartLocation', ['ts', 'accuracy'])
 
 	def __init__(self):
@@ -65,7 +89,7 @@ class AccuracyStats(GpsHandlerCb):
 
 		missingTs = self.lastTs + 1
 		while missingTs < ts:
-			chartAccuracy = AccuracyStats.ChartAccuracy(ts=missingTs, accuracy=0)
+			chartAccuracy = GpsAccuracyStats.ChartAccuracy(ts=missingTs, accuracy=0)
 			self.recordList.append(chartAccuracy)
 
 			missingTs += 1
@@ -74,7 +98,7 @@ class AccuracyStats(GpsHandlerCb):
 		ts = self.rescaleTs(ts)
 		self.addMissingValues(ts)
 
-		chartAccuracy = AccuracyStats.ChartAccuracy(ts=ts, accuracy=0)
+		chartAccuracy = GpsAccuracyStats.ChartAccuracy(ts=ts, accuracy=0)
 		self.recordList.append(chartAccuracy)
 
 		self.lastTs = ts
@@ -83,7 +107,7 @@ class AccuracyStats(GpsHandlerCb):
 		ts = self.rescaleTs(ts)
 		self.addMissingValues(ts)
 
-		chartAccuracy = AccuracyStats.ChartAccuracy(ts=ts, accuracy=location.accuracy)
+		chartAccuracy = GpsAccuracyStats.ChartAccuracy(ts=ts, accuracy=location.accuracy)
 
 		self.recordList.append(chartAccuracy)
 		self.lastTs = ts
@@ -225,7 +249,6 @@ class GpsHandler:
 		parseAndHandleRecord(ts, recordStr, self.recordDescList)
 
 	def handleStartAcq(self, ts):
-
 		for sink in self.sinks:
 			sink.startAcq(ts)
 
@@ -246,30 +269,6 @@ class GpsHandler:
 		for sink in self.sinks:
 			sink.newLocation(ts, location)
 
-BatteryLevel = namedtuple('Location', ['ts', 'level'])
-
-class BatteryHandler:
-	def __init__(self):
-		self.firstRecord = None
-		self.lastRecord = None
-
-	def handleRecord(self, ts, record):
-		value = float(record)
-
-		if not self.firstRecord:
-			self.firstRecord = BatteryLevel(ts, value)
-
-		self.lastRecord = BatteryLevel(ts, value)
-
-	def displayResult(self):
-		print("Battery")
-		print("\tWent from %.02f%% to %.02f%%" % (self.firstRecord.level, self.lastRecord.level))
-
-		lost = self.firstRecord.level - self.lastRecord.level
-		strDuration = msToStrHours(self.lastRecord.ts - self.firstRecord.ts)
-
-		print("\tLost: %.02f%% in %s" % (lost, strDuration))
-
 def msToStrHours(duration):
 		duration = int(duration / 1000)
 		hours = duration // 3600
@@ -281,9 +280,9 @@ def msToStrHours(duration):
 def parseTelemetryFile(path):
 	# Extra stats
 	gpsGeneralStats = GpsGeneralStats()
-	accuracyStats = AccuracyStats()
+	gpsAccuracyStats = GpsAccuracyStats()
 
-	gpsSinks = [gpsGeneralStats, accuracyStats]
+	gpsSinks = [gpsGeneralStats, gpsAccuracyStats]
 
 	appHandler = AppHandler()
 	gpsHandler = GpsHandler(sinks=gpsSinks)
@@ -336,7 +335,7 @@ def parseTelemetryFile(path):
 
 	accuracyChartPath = os.path.dirname(path) + "/accuracyChart.html"
 	print("Generate accuracy chart: %s" % accuracyChartPath)
-	accuracyStats.genChart(accuracyChartPath)
+	gpsAccuracyStats.genChart(accuracyChartPath)
 
 parseTelemetryFile(sys.argv[1])
 
