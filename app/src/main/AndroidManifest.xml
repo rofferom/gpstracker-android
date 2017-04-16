@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           package="fr.rtwo.gpstracker">
 
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
 
     <uses-feature android:name="android.hardware.location.gps"/>
@@ -22,7 +22,7 @@
         </activity>
 
         <service
-            android:name=".GpsRecorder"
+            android:name=".acquisition.AcquisitionService"
             android:enabled="true"
             android:exported="true">
         </service>

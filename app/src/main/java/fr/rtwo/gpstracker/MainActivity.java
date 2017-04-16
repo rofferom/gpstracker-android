@@ -1,8 +1,11 @@
 package fr.rtwo.gpstracker;
 
+import android.content.ComponentName;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.res.Resources;
 import android.location.Location;
+import android.os.IBinder;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -12,49 +15,85 @@ import android.widget.TextView;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import fr.rtwo.gpstracker.acquisition.AcquisitionService;
+
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
 
-    private Telemetry mTelemetry = Telemetry.getInstance();
-    private BatteryReader mBatteryReader;
+    private class AcqListener implements AcquisitionService.Listener {
+        @Override
+        public void onNewLocation(Location location) {
+            Resources resources = getResources();
 
-    private LocationDatabase mLocationDb;
-    private LocationDatabase.Listener mLocationListener;
+            // Update position count
+            TextView tvPosCount = (TextView) findViewById(R.id.positionsCount);
+            int count = mAcqService.getLocationCount();
+
+            Log.i(TAG, count + " locations");
+            tvPosCount.setText(resources.getString(R.string.textViewPosition, count));
+
+            // Update last position
+            SimpleDateFormat dateFormater = new SimpleDateFormat("yyyy/MM/dd HH:mm");
+
+            TextView tvLastPos = (TextView) findViewById(R.id.lastPosition);
+            tvLastPos.setText(resources.getString(
+                    R.string.textViewLastPosition,
+                    dateFormater.format(new Date(location.getTime()))));
+        }
+    }
+
+    // AcquisitionService variables
+    private boolean mAcqServiceBound = false;
+    private AcquisitionService mAcqService;
+    private AcqListener mAcqServiceListerner = new AcqListener();
+
+    private ServiceConnection mAcqServiceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName className,
+                                       IBinder service) {
+            AcquisitionService.LocalBinder binder = (AcquisitionService.LocalBinder) service;
+            mAcqService = binder.getService();
+            mAcqService.registerListener(mAcqServiceListerner);
+            mAcqServiceBound = true;
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName arg0) {
+            mAcqService = null;
+            mAcqServiceBound = false;
+        }
+    };
 
     public void startGpsRecording(View v) {
         Log.i(TAG, "Start GPS recording");
-        mTelemetry.write(Telemetry.APP, "StartRecording");
 
-        // Open telemetry file
-        mTelemetry.open();
+        // Start acquisition service
+        Intent startIntent = new Intent(this, AcquisitionService.class);
+        startService(startIntent);
 
-        // Start GPS acquisition
-        Intent intent = new Intent(this, GpsRecorder.class);
-        startService(intent);
+        // Bind to acquisition service
+        Intent bindItent = new Intent(this, AcquisitionService.class);
+        bindService(bindItent, mAcqServiceConnection, 0);
 
         TextView tv = (TextView) findViewById(R.id.state);
         tv.setText(R.string.textViewStateStarted);
-
-        // Start battery acquisition
-        mBatteryReader.start();
     }
 
     public void stopGpsRecording(View v) {
         Log.i(TAG, "Stop GPS recording");
-        mTelemetry.write(Telemetry.APP, "StopRecording");
 
         // Stop GPS acquisition
-        Intent intent = new Intent(this, GpsRecorder.class);
+        unbindService(mAcqServiceConnection);
+
+        Intent intent = new Intent(this, AcquisitionService.class);
         stopService(intent);
 
-        TextView tv = (TextView) findViewById(R.id.state);
-        tv.setText(R.string.textViewStateStopped);
+        TextView tvState = (TextView) findViewById(R.id.state);
+        tvState.setText(R.string.textViewStateStopped);
 
-        // Stop battery acquisition
-        mBatteryReader.stop();
-
-        // Close telemetry file
-        mTelemetry.close();
+        Log.i(TAG, "0 locations");
+        TextView tvCount = (TextView) findViewById(R.id.positionsCount);
+        tvCount.setText(R.string.textViewPositionNone);
     }
 
     @Override
@@ -63,46 +102,5 @@ public class MainActivity extends AppCompatActivity {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        // Create battery reader
-        mBatteryReader = new BatteryReader(this);
-
-        // Get reference to location database
-        mLocationDb = LocationDatabase.getInstance();
-
-        mLocationListener = mLocationDb.new Listener() {
-            @Override
-            void onNewLocation(Location location) {
-                Resources resources = getResources();
-
-                // Update position count
-                TextView tvPosCount = (TextView) findViewById(R.id.positionsCount);
-                int count = mLocationDb.getCount();
-
-                Log.i(TAG, count + " locations");
-                tvPosCount.setText(resources.getString(R.string.textViewPosition, count));
-
-                // Update last position
-                SimpleDateFormat dateFormater = new SimpleDateFormat("yyyy/MM/dd HH:mm");
-
-                TextView tvLastPos = (TextView) findViewById(R.id.lastPosition);
-                tvLastPos.setText(resources.getString(
-                        R.string.textViewLastPosition,
-                        dateFormater.format(new Date(location.getTime()))));
-            }
-
-            @Override
-            void onLocationsCleared() {
-                Log.i(TAG, "0 locations");
-
-                TextView tv = (TextView) findViewById(R.id.positionsCount);
-                tv.setText(R.string.textViewPositionNone);
-            }
-        };
-
-        ret = mLocationDb.registerListener(mLocationListener);
-        if (ret == false) {
-            Log.e(TAG, "Fail to register LocationListener");
-        }
     }
 }

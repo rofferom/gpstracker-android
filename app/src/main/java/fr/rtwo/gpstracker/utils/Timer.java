@@ -1,4 +1,4 @@
-package fr.rtwo.gpstracker;
+package fr.rtwo.gpstracker.utils;
 
 import android.os.Handler;
 import android.util.Log;
@@ -6,8 +6,8 @@ import android.util.Log;
 public class Timer {
     private static final String TAG = "Timer";
 
-    public abstract class Listener {
-        abstract void onExpired();
+    public interface Listener {
+        void onExpired();
     }
 
     private Handler mHandler;

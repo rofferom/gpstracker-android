@@ -16,5 +16,5 @@ public class Config {
     public long mGpsAcqTimeout = 30; // seconds
 
     // Battery configuration
-    public long mBatteryAcqPeriod = 60; // seconds
+    public long mBatteryAcqPeriod = 120; // seconds
 }

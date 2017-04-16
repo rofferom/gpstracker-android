@@ -1,4 +1,4 @@
-package fr.rtwo.gpstracker;
+package fr.rtwo.gpstracker.logs;
 
 import android.os.Environment;
 import android.util.Log;
@@ -14,16 +14,11 @@ public class Telemetry {
     static public String GPS = "GPS";
     static public String BATTERY = "Battery";
 
-    private static Telemetry ourInstance = new Telemetry();
 
     private File mFile;
     private PrintWriter mWriter;
 
-    public static Telemetry getInstance() {
-        return ourInstance;
-    }
-
-    private Telemetry() {
+    public Telemetry() {
     }
 
     public boolean open() {

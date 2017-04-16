@@ -1,4 +1,4 @@
-package fr.rtwo.gpstracker;
+package fr.rtwo.gpstracker.logs;
 
 import android.content.Context;
 import android.location.Location;
