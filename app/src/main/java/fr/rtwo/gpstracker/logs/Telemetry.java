@@ -10,10 +10,9 @@ import java.util.Calendar;
 import java.util.Date;
 
 public class Telemetry {
-    static public String APP = "APP";
-    static public String GPS = "GPS";
-    static public String BATTERY = "Battery";
-
+    static public final String APP = "APP";
+    static public final String GPS = "GPS";
+    static public final String BATTERY = "Battery";
 
     private File mFile;
     private PrintWriter mWriter;
@@ -21,25 +20,9 @@ public class Telemetry {
     public Telemetry() {
     }
 
-    public boolean open() {
+    public boolean open(File parent) {
         if (mFile != null)
             return false;
-
-        Calendar c = Calendar.getInstance();
-
-        String folderName = String.format(
-                "%04d%02d%02d-%02d%02d%02d",
-                c.get(Calendar.YEAR),
-                c.get(Calendar.MONTH),
-                c.get(Calendar.DAY_OF_MONTH),
-                c.get(Calendar.HOUR_OF_DAY),
-                c.get(Calendar.MINUTE),
-                c.get(Calendar.SECOND));
-
-
-        File rootFolder = Environment.getExternalStorageDirectory();
-        File parent = new File(rootFolder, "GpsTracker/" + folderName);
-        parent.mkdirs();
 
         mFile = new File(parent, "telemetry.txt");
 

@@ -13,12 +13,14 @@ import android.os.IBinder;
 import android.os.SystemClock;
 import android.util.Log;
 
+import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
 
 import fr.rtwo.gpstracker.Config;
 import fr.rtwo.gpstracker.logs.EventLogger;
 import fr.rtwo.gpstracker.logs.Telemetry;
+import fr.rtwo.gpstracker.logs.Tools;
 
 public class AcquisitionService extends Service {
     private static final String TAG = "AcqService";
@@ -65,12 +67,14 @@ public class AcquisitionService extends Service {
         mAlarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
 
         // Open record file
+        File folder = Tools.createOutputFolder();
+
         mEventLogger = new EventLogger();
-        mEventLogger.open();
+        mEventLogger.open(folder);
 
         // Open telemetry file
         mTelemetry = new Telemetry();
-        mTelemetry.open();
+        mTelemetry.open(folder);
 
         // Create GPS recorder
         mGpsRecorderListener = new GpsListener();

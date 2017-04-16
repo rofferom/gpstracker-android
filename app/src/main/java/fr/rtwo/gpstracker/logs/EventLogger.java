@@ -19,37 +19,8 @@ public class EventLogger {
     public EventLogger() {
     }
 
-    private boolean isExternalStorageWritable() {
-        String state = Environment.getExternalStorageState();
-
-        if (Environment.MEDIA_MOUNTED.equals(state)) {
-            return true;
-        }
-
-        return false;
-    }
-
-    public void open() {
-        Calendar c = Calendar.getInstance();
-
-        if (!isExternalStorageWritable()) {
-            Log.e(TAG, "External storage not writable");
-            return;
-        }
-
-        String filename = String.format(
-            "GpsTracker-%04d%02d%02d-%02d%02d%02d.bin",
-            c.get(Calendar.YEAR),
-            c.get(Calendar.MONTH),
-            c.get(Calendar.DAY_OF_MONTH),
-            c.get(Calendar.HOUR_OF_DAY),
-            c.get(Calendar.MINUTE),
-            c.get(Calendar.SECOND));
-
-        Log.i(TAG, "Open file: " + filename);
-
-        File parent = Environment.getExternalStorageDirectory();
-        mFile = new File(parent, filename);
+    public void open(File parent) {
+        mFile = new File(parent, "locations.txt");
 
         try {
             mWriter = new PrintWriter(mFile);
