@@ -32,7 +32,7 @@ def generateHtml(locationList, outPath):
 	out.write(html)
 
 def convertFile(srcPath):
-	outPath = srcPath.replace(".bin", ".html")
+	outPath = srcPath.replace(".txt", ".html")
 
 	print("%s => %s" % (srcPath, outPath))
 	locationList = getLocationList(srcPath)
