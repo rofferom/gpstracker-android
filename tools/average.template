@@ -1,0 +1,38 @@
+<html>
+	<head>
+		<script type="text/javascript" src="http://dygraphs.com/1.1.1/dygraph-combined.js"></script>
+
+		<!-- Graph loading -->
+		<script type="text/javascript">
+			function displayGraph() {
+				graph = new Dygraph(
+					document.getElementById("graphdiv"),
+					data,
+					{
+						labels: labels,
+						connectSeparatedPoints: true,
+						legend: 'always',
+						highlightCircleSize: 5,
+						highlightSeriesOpts: { strokeWidth: 3 },
+					} // options
+				);
+			};
+		</script>
+
+		<!-- Data definition -->
+		<script type="text/javascript">
+			data = [
+{% for acc in accuracyList %}
+				[ {{ acc.ts }}, {{ acc.accuracy }} ],
+{% endfor %}
+			];
+
+			labels = [ "timestamp (s)", "Accuracy (m)" ];
+		</script>
+	</head>
+
+	<body onload="displayGraph()">
+		<div id="graphdiv" style="width:100%; height:100%;"></div>
+	</body>
+</html>
+

@@ -3,7 +3,9 @@
 
 import sys
 import re
+import os
 import statistics
+import jinja2
 from collections import namedtuple
 
 # local packages
@@ -26,6 +28,62 @@ def parseAndHandleRecord(ts, recordStr, recordDescList):
 		recordDesc.handler(ts, recordArgs)
 	else:
 		recordDesc.handler(ts)
+
+class AccuracyStats:
+	ChartAccuracy = namedtuple('ChartLocation', ['ts', 'accuracy'])
+
+	def __init__(self):
+		self.recordList = []
+		self.firstTs = None
+		self.lastTs = None
+
+	def rescaleTs(self, ts):
+		if not self.firstTs:
+			self.firstTs = ts
+
+		# ms => s
+		return int((ts - self.firstTs) / 1000)
+
+	def addMissingValues(self, ts):
+		if not self.lastTs:
+			return
+
+		missingTs = self.lastTs + 1
+		while missingTs < ts:
+			chartAccuracy = AccuracyStats.ChartAccuracy(ts=missingTs, accuracy=0)
+			self.recordList.append(chartAccuracy)
+
+			missingTs += 1
+
+	def startAcq(self, ts):
+		ts = self.rescaleTs(ts)
+		self.addMissingValues(ts)
+
+		chartAccuracy = AccuracyStats.ChartAccuracy(ts=ts, accuracy=0)
+		self.recordList.append(chartAccuracy)
+
+		self.lastTs = ts
+
+	def newLocation(self, ts, location):
+		ts = self.rescaleTs(ts)
+		self.addMissingValues(ts)
+
+		chartAccuracy = AccuracyStats.ChartAccuracy(ts=ts, accuracy=location.accuracy)
+
+		self.recordList.append(chartAccuracy)
+		self.lastTs = ts
+
+	def genChart(self, outPath):
+		sourcePath = os.path.dirname(os.path.abspath(__file__))
+		templateFile = open('%s/average.template' % sourcePath, 'r')
+		template = jinja2.Template(templateFile.read())
+
+		html = template.render(accuracyList=self.recordList)
+
+		# Write output file
+		out = open(outPath, 'w')
+		out.write(html)
+
 
 class AppHandler:
 	def __init__(self):
@@ -59,7 +117,9 @@ class AppHandler:
 		print("\tGps acquisition timeout: %ds" % self.gpsAcqTimeout)
 
 class GpsHandler:
-	def __init__(self):
+	def __init__(self, sinks):
+		self.sinks = sinks
+
 		self.recordDescList = {
 			"StartAcq":   Record(handler=self.handleStartAcq,   hasArgs=False),
 			"StopAcq":    Record(handler=self.handleStopAcq,    hasArgs=False),
@@ -86,6 +146,9 @@ class GpsHandler:
 	def handleStartAcq(self, ts):
 		self.startAcqCount += 1
 		self.lastStartAcqTs = ts
+
+		for sink in self.sinks:
+			sink.startAcq(ts)
 
 	def handleStopAcq(self, ts):
 		pass
@@ -116,6 +179,9 @@ class GpsHandler:
 
 		self.rawAccuracyList.append(location.accuracy)
 		self.lastLocation = location
+
+		for sink in self.sinks:
+			sink.newLocation(ts, location)
 
 	def displayMinMaxAverage(self, l):
 		print("\tmin: %.02fm" % min(l))
@@ -182,8 +248,13 @@ def msToStrHours(duration):
 
 
 def parseTelemetryFile(path):
+	# Extra stats
+	accuracyStats = AccuracyStats()
+
+	gpsSinks = [accuracyStats]
+
 	appHandler = AppHandler()
-	gpsHandler = GpsHandler()
+	gpsHandler = GpsHandler(sinks=gpsSinks)
 	batteryHandler = BatteryHandler()
 
 	# Parse
@@ -230,6 +301,10 @@ def parseTelemetryFile(path):
 	appHandler.displayResult()
 	gpsHandler.displayResult()
 	batteryHandler.displayResult()
+
+	accuracyChartPath = os.path.dirname(path) + "/accuracyChart.html"
+	print("Generate accuracy chart: %s" % accuracyChartPath)
+	accuracyStats.genChart(accuracyChartPath)
 
 parseTelemetryFile(sys.argv[1])
 
