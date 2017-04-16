@@ -19,7 +19,7 @@ public class Telemetry {
     static public final String GPS_STOP_ACQ        = "StopAcq";
     static public final String GPS_TIMEOUT         = "Timeout";
     static public final String GPS_VALID_POINT     = "ValidPoint";
-    static public final String GPS_LOCATION_FORMAT = "ts:%d;lat:%f;long:%f;accuracy:%f;speed:%f";
+    static public final String GPS_LOCATION_FORMAT = "Location;ts:%d;lat:%f;long:%f;accuracy:%f;speed:%f";
 
     // Battery tags
     static public final String BATTERY_TAG = "Battery";
