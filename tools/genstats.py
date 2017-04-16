@@ -77,6 +77,9 @@ class GpsHandler:
 		self.lastStartAcqTs = None
 		self.acqDurationList = []
 
+		self.lastLocation = None
+		self.timeoutAccuracyList = []
+
 	def handleRecord(self, ts, recordStr):
 		parseAndHandleRecord(ts, recordStr, self.recordDescList)
 
@@ -92,6 +95,11 @@ class GpsHandler:
 
 		self.lastStartAcqTs = None
 
+		if self.lastLocation:
+			self.timeoutAccuracyList.append(self.lastLocation.accuracy)
+
+		self.lastLocation = None
+
 	def handleValidPoint(self, ts):
 		self.validCount += 1
 		self.validAccuracyList.append(self.rawAccuracyList[-1])
@@ -99,12 +107,15 @@ class GpsHandler:
 		# ms => s
 		duration = int((ts - self.lastStartAcqTs) / 1000)
 		self.acqDurationList.append(duration)
+
 		self.lastStartAcqTs = None
+		self.lastLocation = None
 
 	def handleLocation(self, ts, args):
 		location = locationFromStr(args)
 
 		self.rawAccuracyList.append(location.accuracy)
+		self.lastLocation = location
 
 	def displayMinMaxAverage(self, l):
 		print("\tmin: %.02fm" % min(l))
@@ -134,6 +145,8 @@ class GpsHandler:
 		print("Accuracy of valid points")
 		self.displayMinMaxAverage(self.validAccuracyList)
 
+		print("Accuracy of last points before timeout")
+		self.displayMinMaxAverage(self.timeoutAccuracyList)
 
 BatteryLevel = namedtuple('Location', ['ts', 'level'])
 
