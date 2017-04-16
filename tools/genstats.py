@@ -29,10 +29,25 @@ def parseAndHandleRecord(ts, recordStr, recordDescList):
 	else:
 		recordDesc.handler(ts)
 
-class AccuracyStats:
+class GpsHandlerCb:
+	def startAcq(self, ts):
+		pass
+
+	def timeout(self, ts):
+		pass
+
+	def validPoint(self, ts):
+		pass
+
+	def newLocation(self, ts, location):
+		pass
+
+class AccuracyStats(GpsHandlerCb):
 	ChartAccuracy = namedtuple('ChartLocation', ['ts', 'accuracy'])
 
 	def __init__(self):
+		super().__init__()
+
 		self.recordList = []
 		self.firstTs = None
 		self.lastTs = None
@@ -116,17 +131,9 @@ class AppHandler:
 		print("\tGps acquisition period: %ds" % self.gpsAcqPeriod)
 		print("\tGps acquisition timeout: %ds" % self.gpsAcqTimeout)
 
-class GpsHandler:
-	def __init__(self, sinks):
-		self.sinks = sinks
-
-		self.recordDescList = {
-			"StartAcq":   Record(handler=self.handleStartAcq,   hasArgs=False),
-			"StopAcq":    Record(handler=self.handleStopAcq,    hasArgs=False),
-			"Timeout":    Record(handler=self.handleTimeout,    hasArgs=False),
-			"ValidPoint": Record(handler=self.handleValidPoint, hasArgs=False),
-			"Location":   Record(handler=self.handleLocation,   hasArgs=True),
-		}
+class GpsGeneralStats(GpsHandlerCb):
+	def __init__(self):
+		super().__init__()
 
 		self.startAcqCount = 0
 		self.validCount = 0
@@ -140,20 +147,11 @@ class GpsHandler:
 		self.lastLocation = None
 		self.timeoutAccuracyList = []
 
-	def handleRecord(self, ts, recordStr):
-		parseAndHandleRecord(ts, recordStr, self.recordDescList)
-
-	def handleStartAcq(self, ts):
+	def startAcq(self, ts):
 		self.startAcqCount += 1
 		self.lastStartAcqTs = ts
 
-		for sink in self.sinks:
-			sink.startAcq(ts)
-
-	def handleStopAcq(self, ts):
-		pass
-
-	def handleTimeout(self, ts):
+	def timeout(self, ts):
 		self.timeoutCount += 1
 
 		self.lastStartAcqTs = None
@@ -163,7 +161,7 @@ class GpsHandler:
 
 		self.lastLocation = None
 
-	def handleValidPoint(self, ts):
+	def validPoint(self, ts):
 		self.validCount += 1
 		self.validAccuracyList.append(self.rawAccuracyList[-1])
 
@@ -174,14 +172,9 @@ class GpsHandler:
 		self.lastStartAcqTs = None
 		self.lastLocation = None
 
-	def handleLocation(self, ts, args):
-		location = locationFromStr(args)
-
+	def newLocation(self, ts, location):
 		self.rawAccuracyList.append(location.accuracy)
 		self.lastLocation = location
-
-		for sink in self.sinks:
-			sink.newLocation(ts, location)
 
 	def displayMinMaxAverage(self, l):
 		print("\tmin: %.02fm" % min(l))
@@ -216,6 +209,43 @@ class GpsHandler:
 		print("Accuracy of last points before timeout")
 		self.displayMinMaxAverage(self.timeoutAccuracyList)
 
+class GpsHandler:
+	def __init__(self, sinks):
+		self.sinks = sinks
+
+		self.recordDescList = {
+			"StartAcq":   Record(handler=self.handleStartAcq,   hasArgs=False),
+			"StopAcq":    Record(handler=self.handleStopAcq,    hasArgs=False),
+			"Timeout":    Record(handler=self.handleTimeout,    hasArgs=False),
+			"ValidPoint": Record(handler=self.handleValidPoint, hasArgs=False),
+			"Location":   Record(handler=self.handleLocation,   hasArgs=True),
+		}
+
+	def handleRecord(self, ts, recordStr):
+		parseAndHandleRecord(ts, recordStr, self.recordDescList)
+
+	def handleStartAcq(self, ts):
+
+		for sink in self.sinks:
+			sink.startAcq(ts)
+
+	def handleStopAcq(self, ts):
+		pass
+
+	def handleTimeout(self, ts):
+		for sink in self.sinks:
+			sink.timeout(ts)
+
+	def handleValidPoint(self, ts):
+		for sink in self.sinks:
+			sink.validPoint(ts)
+
+	def handleLocation(self, ts, args):
+		location = locationFromStr(args)
+
+		for sink in self.sinks:
+			sink.newLocation(ts, location)
+
 BatteryLevel = namedtuple('Location', ['ts', 'level'])
 
 class BatteryHandler:
@@ -248,12 +278,12 @@ def msToStrHours(duration):
 
 		return "%02d:%02d:%02d" % (hours, minutes, seconds)
 
-
 def parseTelemetryFile(path):
 	# Extra stats
+	gpsGeneralStats = GpsGeneralStats()
 	accuracyStats = AccuracyStats()
 
-	gpsSinks = [accuracyStats]
+	gpsSinks = [gpsGeneralStats, accuracyStats]
 
 	appHandler = AppHandler()
 	gpsHandler = GpsHandler(sinks=gpsSinks)
@@ -301,7 +331,7 @@ def parseTelemetryFile(path):
 	print("Duration: %s" % msToStrHours(lastTs - firstTs))
 
 	appHandler.displayResult()
-	gpsHandler.displayResult()
+	gpsGeneralStats.displayResult()
 	batteryHandler.displayResult()
 
 	accuracyChartPath = os.path.dirname(path) + "/accuracyChart.html"
