@@ -187,6 +187,7 @@ class GpsHandler:
 		print("\tmin: %.02fm" % min(l))
 		print("\tmax: %.02fm" % max(l))
 		print("\taverage: %.02fm" % statistics.mean(l))
+		print("\tmedian: %.02fm" % statistics.median(l))
 
 	def displayResult(self):
 		# Count
@@ -203,6 +204,7 @@ class GpsHandler:
 		print("\tmin: %ds" % min(self.acqDurationList))
 		print("\tmax: %ds" % max(self.acqDurationList))
 		print("\taverage: %ds" % statistics.mean(self.acqDurationList))
+		print("\tmedian: %ds" % statistics.median(self.acqDurationList))
 
 		# Accuracy
 		print("Accuracy of RAW points")
