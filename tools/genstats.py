@@ -1,0 +1,222 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+
+import sys
+import re
+import statistics
+from collections import namedtuple
+
+# local packages
+from location import locationFromStr
+
+Record = namedtuple('Record', ['handler', 'hasArgs'])
+
+def parseAndHandleRecord(ts, recordStr, recordDescList):
+	pattern = re.compile("(?P<name>[A-Za-z]*);?")
+	result = pattern.match(recordStr)
+
+	name = result.group("name")
+
+	recordDesc = recordDescList[name]
+	if recordDesc.hasArgs:
+		# Skip trailing ';'
+		endIdx = result.end(result.lastgroup) + 1
+		recordArgs = recordStr[endIdx:]
+
+		recordDesc.handler(ts, recordArgs)
+	else:
+		recordDesc.handler(ts)
+
+class AppHandler:
+	def __init__(self):
+		self.gpsAccuracy = 0.0
+		self.gpsAcqPeriod = 0
+		self.gpsAcqTimeout = 0
+
+		self.recordDescList = {
+			"Config": Record(handler=self.handleConfig, hasArgs=True),
+		}
+
+	def handleRecord(self, ts, recordStr):
+		parseAndHandleRecord(ts, recordStr, self.recordDescList)
+
+	def handleConfig(self, ts, args):
+		def convertStrFloat(s):
+			return float(s.replace(',', '.'))
+
+		# accuracy:10,0;gpsAcqPeriod:60;gpsAcqTimeout:60
+		pattern = re.compile("gpsAccuracy:(?P<gpsAccuracy>\d*?,\d*?);gpsAcqPeriod:(?P<gpsAcqPeriod>\d*);gpsAcqTimeout:(?P<gpsAcqTimeout>\d*)")
+		result = pattern.match(args)
+
+		self.gpsAccuracy = float(result.group("gpsAccuracy").replace(',', '.'))
+		self.gpsAcqPeriod = int(result.group("gpsAcqPeriod"))
+		self.gpsAcqTimeout = int(result.group("gpsAcqTimeout"))
+
+	def displayResult(self):
+		print("Configuration")
+		print("\tGps accuracy: %.02fm" % self.gpsAccuracy)
+		print("\tGps acquisition period: %ds" % self.gpsAcqPeriod)
+		print("\tGps acquisition timeout: %ds" % self.gpsAcqTimeout)
+
+class GpsHandler:
+	def __init__(self):
+		self.recordDescList = {
+			"StartAcq":   Record(handler=self.handleStartAcq,   hasArgs=False),
+			"StopAcq":    Record(handler=self.handleStopAcq,    hasArgs=False),
+			"Timeout":    Record(handler=self.handleTimeout,    hasArgs=False),
+			"ValidPoint": Record(handler=self.handleValidPoint, hasArgs=False),
+			"Location":   Record(handler=self.handleLocation,   hasArgs=True),
+		}
+
+		self.startAcqCount = 0
+		self.validCount = 0
+		self.timeoutCount = 0
+		self.rawAccuracyList = []
+		self.validAccuracyList = []
+
+		self.lastStartAcqTs = None
+		self.acqDurationList = []
+
+	def handleRecord(self, ts, recordStr):
+		parseAndHandleRecord(ts, recordStr, self.recordDescList)
+
+	def handleStartAcq(self, ts):
+		self.startAcqCount += 1
+		self.lastStartAcqTs = ts
+
+	def handleStopAcq(self, ts):
+		pass
+
+	def handleTimeout(self, ts):
+		self.timeoutCount += 1
+
+		self.lastStartAcqTs = None
+
+	def handleValidPoint(self, ts):
+		self.validCount += 1
+		self.validAccuracyList.append(self.rawAccuracyList[-1])
+
+		# ms => s
+		duration = int((ts - self.lastStartAcqTs) / 1000)
+		self.acqDurationList.append(duration)
+		self.lastStartAcqTs = None
+
+	def handleLocation(self, ts, args):
+		location = locationFromStr(args)
+
+		self.rawAccuracyList.append(location.accuracy)
+
+	def displayMinMaxAverage(self, l):
+		print("\tmin: %.02fm" % min(l))
+		print("\tmax: %.02fm" % max(l))
+		print("\taverage: %.02fm" % statistics.mean(l))
+
+	def displayResult(self):
+		# Count
+		print("%d acquisitions" % self.startAcqCount)
+
+		validPercentage = (self.validCount / self.startAcqCount) * 100
+		print("\t%d valid points (%.02f%%)" % (self.validCount, validPercentage))
+
+		timeoutPercentage = (self.timeoutCount / self.startAcqCount) * 100
+		print("\t%d timeout (%.02f%%)" % (self.timeoutCount, timeoutPercentage))
+
+		# Time to fix
+		print("Time to fix")
+		print("\tmin: %ds" % min(self.acqDurationList))
+		print("\tmax: %ds" % max(self.acqDurationList))
+		print("\taverage: %ds" % statistics.mean(self.acqDurationList))
+
+		# Accuracy
+		print("Accuracy of RAW points")
+		self.displayMinMaxAverage(self.rawAccuracyList)
+
+		print("Accuracy of valid points")
+		self.displayMinMaxAverage(self.validAccuracyList)
+
+
+BatteryLevel = namedtuple('Location', ['ts', 'level'])
+
+class BatteryHandler:
+	def __init__(self):
+		self.firstRecord = None
+		self.lastRecord = None
+
+	def handleRecord(self, ts, record):
+		value = float(record)
+
+		if not self.firstRecord:
+			self.firstRecord = BatteryLevel(ts, value)
+
+		self.lastRecord = BatteryLevel(ts, value)
+
+	def displayResult(self):
+		print("Battery")
+		print("\tWent from %.02f%% to %.02f%%" % (self.firstRecord.level, self.lastRecord.level))
+
+		lost = self.firstRecord.level - self.lastRecord.level
+		strDuration = msToStrHours(self.lastRecord.ts - self.firstRecord.ts)
+
+		print("\tLost: %.02f%% in %s" % (lost, strDuration))
+
+def msToStrHours(duration):
+		duration = int(duration / 1000)
+		hours = duration // 3600
+		minutes = (duration % 3600) // 60
+		seconds = duration % 60
+
+		return "%02d:%02d:%02d" % (hours, minutes, seconds)
+
+
+def parseTelemetryFile(path):
+	appHandler = AppHandler()
+	gpsHandler = GpsHandler()
+	batteryHandler = BatteryHandler()
+
+	# Parse
+	handlerMap = {
+		"APP": appHandler,
+		"GPS": gpsHandler,
+		"Battery": batteryHandler,
+	}
+
+	firstTs = None
+	lastTs = None
+
+	f = open(path)
+	for line in f:
+		if line[-1] == '\n':
+			line = line[:-1]
+
+		if len(line) == 0:
+			break
+
+		# [1492336069275]GPS:
+		pattern = re.compile("\[(?P<ts>\d+)\](?P<tag>.*?):")
+		result = pattern.match(line)
+
+		# Skip trailing ':'
+		endIdx = result.end(result.lastgroup) + 1
+		record = line[endIdx:]
+
+		ts = int(result.group("ts"))
+		if not firstTs:
+			firstTs = ts
+
+		lastTs = ts
+
+		tag = result.group("tag")
+
+		# Call handler
+		handler = handlerMap[tag]
+		handler.handleRecord(ts, record)
+
+	# Display results
+	print("Duration: %s" % msToStrHours(lastTs - firstTs))
+
+	appHandler.displayResult()
+	gpsHandler.displayResult()
+	batteryHandler.displayResult()
+
+parseTelemetryFile(sys.argv[1])
+
