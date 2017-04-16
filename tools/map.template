@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <style type="text/css">
+        html { height: 100% }
+        body { height: 100%; margin: 0; padding: 0 }
+        #map_canvas { height: 100% }
+    </style>
+    <script type="text/javascript"
+        src="http://code.jquery.com/jquery-1.7.2.min.js">
+    </script>
+    <script type="text/javascript"
+        src="http://maps.googleapis.com/maps/api/js?key=AIzaSyCc4Nwf-a8i2RaevP447u2B8Q46veU_-Ik">
+    </script>
+    <script type="text/javascript">
+        function displayMap()
+        {
+           var positionList = [
+{% for loc in locationList %}
+               {
+                   "ts": {{ loc.ts }},
+                   "lat": {{ loc.lat }},
+                   "lon": {{ loc.lon }},
+               },
+{% endfor %}
+           ]
+
+           centerPos = positionList[0]
+           var myOptions = {
+              center: new google.maps.LatLng(centerPos.lat, centerPos.lon),
+              mapTypeId: google.maps.MapTypeId.ROADMAP
+           };
+
+           var map = new google.maps.Map($("#mapCanvas")[0], myOptions);
+           console.log("Create map")
+
+           var bounds = new google.maps.LatLngBounds();
+
+           for (var i = 0 ; i < positionList.length ; i++) {
+              var position = positionList[i];
+
+              console.log(position)
+
+              var mapsPos = new google.maps.LatLng(position.lat, position.lon)
+              bounds.extend(mapsPos)
+
+              var date = new Date(position.ts)
+              var markerOptions = {
+                  position: mapsPos,
+                  title: date.toLocaleString()
+              };
+
+              if (i == 0) {
+                  markerOptions.icon = "http://www.google.com/intl/en_us/mapfiles/ms/micons/blue-dot.png"
+              }
+
+              var marker = new google.maps.Marker(markerOptions);
+              marker.setMap(map);
+           }
+
+           map.fitBounds(bounds)
+           map.panToBounds(bounds)
+        }
+    </script>
+  </head>
+  <body onload="displayMap();">
+    <div id="mapCanvas" style="width:100%; height:100%"></div>
+  </body>
+</html>
+
