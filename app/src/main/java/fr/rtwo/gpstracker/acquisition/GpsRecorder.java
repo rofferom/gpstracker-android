@@ -58,7 +58,7 @@ public class GpsRecorder {
 
     public void start() {
         Log.i(TAG, "Start acquisition");
-        mTelemetry.write(Telemetry.GPS, "StartAcq");
+        mTelemetry.write(Telemetry.GPS_TAG, Telemetry.GPS_START_ACQ);
 
         try {
             mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 0, mLocationListener);
@@ -82,7 +82,7 @@ public class GpsRecorder {
 
     public void stop() {
         Log.i(TAG, "Stop acquisition");
-        mTelemetry.write(Telemetry.GPS, "StopAcq");
+        mTelemetry.write(Telemetry.GPS_TAG, Telemetry.GPS_STOP_ACQ);
 
         // Clear current acquisition context
         try {
@@ -101,9 +101,9 @@ public class GpsRecorder {
         float accuracy = location.getAccuracy();
 
         mTelemetry.write(
-                Telemetry.GPS,
+                Telemetry.GPS_TAG,
                 String.format(
-                        "ts:%d;lat:%f;long:%f;accuracy:%f;speed:%f",
+                        Telemetry.GPS_LOCATION_FORMAT,
                         location.getTime(),
                         location.getLatitude(),
                         location.getLongitude(),
@@ -114,7 +114,7 @@ public class GpsRecorder {
         if (accuracy <= mConfig.mGpsAccuracy) {
             Log.d(TAG, "Position stored (accuracy : " + accuracy + ")");
 
-            mTelemetry.write(Telemetry.GPS, "ValidPoint");
+            mTelemetry.write(Telemetry.GPS_TAG, Telemetry.GPS_VALID_POINT);
 
             if (mListener != null)
                 mListener.onNewLocation(location);
@@ -131,7 +131,7 @@ public class GpsRecorder {
 
         Log.i(TAG, "Location acquisition timeout (better accuracy : " + accuracy + ")");
 
-        mTelemetry.write(Telemetry.GPS, "Timeout");
+        mTelemetry.write(Telemetry.GPS_TAG, Telemetry.GPS_TIMEOUT);
 
         if (mListener != null)
             mListener.onTimeout();

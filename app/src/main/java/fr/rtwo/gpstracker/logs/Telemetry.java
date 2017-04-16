@@ -10,9 +10,19 @@ import java.util.Calendar;
 import java.util.Date;
 
 public class Telemetry {
-    static public final String APP = "APP";
-    static public final String GPS = "GPS";
-    static public final String BATTERY = "Battery";
+    static public final String APP_TAG = "APP";
+
+    // GPS values
+    static public final String GPS_TAG = "GPS";
+
+    static public final String GPS_START_ACQ       = "StartAcq";
+    static public final String GPS_STOP_ACQ        = "StopAcq";
+    static public final String GPS_TIMEOUT         = "Timeout";
+    static public final String GPS_VALID_POINT     = "ValidPoint";
+    static public final String GPS_LOCATION_FORMAT = "ts:%d;lat:%f;long:%f;accuracy:%f;speed:%f";
+
+    // Battery tags
+    static public final String BATTERY_TAG = "Battery";
 
     private File mFile;
     private PrintWriter mWriter;

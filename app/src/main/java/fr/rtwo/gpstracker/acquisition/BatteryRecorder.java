@@ -42,7 +42,7 @@ public class BatteryRecorder {
         int scale = batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
 
         float batteryPct = (level / (float) scale) * 100;
-        mTelemetry.write(Telemetry.BATTERY, String.valueOf(batteryPct));
+        mTelemetry.write(Telemetry.BATTERY_TAG, String.valueOf(batteryPct));
     }
 
     public boolean start() {

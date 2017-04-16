@@ -11,9 +11,9 @@ public class Config {
     }
 
     // GPS configuration
-    public float mGpsAccuracy = 10.0f; // meters
-    public long mGpsAcqPeriod = 60; // seconds
-    public long mGpsAcqTimeout = 30; // seconds
+    public float mGpsAccuracy = 5.0f; // meters
+    public long mGpsAcqPeriod = 120; // seconds
+    public long mGpsAcqTimeout = 60; // seconds
 
     // Battery configuration
     public long mBatteryAcqPeriod = 120; // seconds
