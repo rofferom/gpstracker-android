@@ -4,6 +4,7 @@
 import sys
 import re
 import os
+import argparse
 import statistics
 import jinja2
 from collections import namedtuple
@@ -236,6 +237,8 @@ class GpsGeneralStats(GpsHandlerCb):
 class GpsHandler:
 	def __init__(self, sinks):
 		self.sinks = sinks
+		self.forcedAccuracy = None
+		self.validPointBroadcasted = False
 
 		self.recordDescList = {
 			"StartAcq":   Record(handler=self.handleStartAcq,   hasArgs=False),
@@ -245,10 +248,15 @@ class GpsHandler:
 			"Location":   Record(handler=self.handleLocation,   hasArgs=True),
 		}
 
+	def forceAccuracyConfig(self, forcedAccuracy):
+		self.forcedAccuracy = forcedAccuracy
+
 	def handleRecord(self, ts, recordStr):
 		parseAndHandleRecord(ts, recordStr, self.recordDescList)
 
 	def handleStartAcq(self, ts):
+		self.validPointBroadcasted = False
+
 		for sink in self.sinks:
 			sink.startAcq(ts)
 
@@ -256,18 +264,35 @@ class GpsHandler:
 		pass
 
 	def handleTimeout(self, ts):
-		for sink in self.sinks:
-			sink.timeout(ts)
+		if self.forcedAccuracy and self.validPointBroadcasted:
+			pass
+		else:
+			for sink in self.sinks:
+				sink.timeout(ts)
 
 	def handleValidPoint(self, ts):
-		for sink in self.sinks:
-			sink.validPoint(ts)
+		if self.forcedAccuracy and self.validPointBroadcasted:
+			pass
+		else:
+			for sink in self.sinks:
+				sink.validPoint(ts)
 
 	def handleLocation(self, ts, args):
-		location = locationFromStr(args)
+		# Ignore extra locations of "validPoint" has already been broadcasted
+		if self.forcedAccuracy and self.validPointBroadcasted:
+			return
 
+		# Broadcast "newLocation"
+		location = locationFromStr(args)
 		for sink in self.sinks:
 			sink.newLocation(ts, location)
+
+		# Broadcast "validPoint" if the accuracy config has been forced
+		if self.forcedAccuracy and location.accuracy <= self.forcedAccuracy:
+			for sink in self.sinks:
+				sink.validPoint(ts)
+
+			self.validPointBroadcasted = True
 
 def msToStrHours(duration):
 		duration = int(duration / 1000)
@@ -277,7 +302,7 @@ def msToStrHours(duration):
 
 		return "%02d:%02d:%02d" % (hours, minutes, seconds)
 
-def parseTelemetryFile(path):
+def parseTelemetryFile(path, args):
 	# Extra stats
 	gpsGeneralStats = GpsGeneralStats()
 	gpsAccuracyStats = GpsAccuracyStats()
@@ -295,9 +320,13 @@ def parseTelemetryFile(path):
 		"Battery": batteryHandler,
 	}
 
+	if args.accuracy:
+		gpsHandler.forceAccuracyConfig(args.accuracy)
+
 	firstTs = None
 	lastTs = None
 
+	print("Open file '%s'" % path)
 	f = open(path)
 	for line in f:
 		if line[-1] == '\n':
@@ -337,5 +366,16 @@ def parseTelemetryFile(path):
 	print("Generate accuracy chart: %s" % accuracyChartPath)
 	gpsAccuracyStats.genChart(accuracyChartPath)
 
-parseTelemetryFile(sys.argv[1])
+
+def parseArgs():
+	parser = argparse.ArgumentParser(description='Generate stats from a telemetry file.')
+	parser.add_argument('--force-gps-accuracy', dest='accuracy', type=float, help='Force to use an other GPS accuracy')
+	parser.add_argument('fileList', nargs='+', help='Files to parse')
+	return parser.parse_args()
+
+if __name__ == '__main__':
+	args = parseArgs()
+
+	for f in args.fileList:
+		parseTelemetryFile(f, args)
 
