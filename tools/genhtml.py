@@ -7,27 +7,16 @@ import re
 import jinja2
 from collections import namedtuple
 
-Location = namedtuple('Location', ['ts', 'lat', 'lon', 'accuracy', 'speed'])
-
-def convertStrFloat(s):
-	return s.replace(',', '.')
+# local packages
+from location import locationFromStr
 
 def getLocationList(path):
 	locationList = []
 
 	f = open(path)
 	for line in f:
-		#ts:1491495219000;lat:48,879167;long:2,359470;accuracy:197,000000;speed:0,000000
-		pattern = re.compile("ts:(?P<ts>\d*?);lat:(?P<lat>\d*?,\d*?);long:(?P<long>\d*?,\d*?);accuracy:(?P<accuracy>\d*?,\d*?);speed:(?P<speed>\d*?,\d*?)")
-		result = pattern.match(line)
-
-		locationList.append(Location(
-			ts=int(result.group("ts")),
-			lat=float(convertStrFloat(result.group("lat"))),
-			lon=float(convertStrFloat(result.group("long"))),
-			accuracy=float(convertStrFloat(result.group("accuracy"))),
-			speed=float(convertStrFloat(result.group("speed"))))
-		)
+		location = locationFromStr(line)
+		locationList.append(location)
 
 	return locationList
 
