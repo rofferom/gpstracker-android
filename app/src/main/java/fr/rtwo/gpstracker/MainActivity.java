@@ -66,6 +66,9 @@ public class MainActivity extends AppCompatActivity {
     };
 
     public void startGpsRecording(View v) {
+        if (mAcqServiceBound)
+            return;
+
         Log.i(TAG, "Start GPS recording");
 
         // Start acquisition service
@@ -81,10 +84,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void stopGpsRecording(View v) {
+        if (!mAcqServiceBound)
+            return;
+
         Log.i(TAG, "Stop GPS recording");
 
         // Stop GPS acquisition
         unbindService(mAcqServiceConnection);
+        mAcqServiceBound = false;
 
         Intent intent = new Intent(this, AcquisitionService.class);
         stopService(intent);
