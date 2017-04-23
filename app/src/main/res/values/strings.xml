@@ -12,4 +12,10 @@
 
     <string name="textViewLastPositionNone">No last position</string>
     <string name="textViewLastPosition">Last position: %s</string>
+
+    <string name="navDrawerOpen">Close</string>
+    <string name="navDrawerClose">Close</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

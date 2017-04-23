@@ -1,117 +1,69 @@
 package fr.rtwo.gpstracker;
 
-import android.content.ComponentName;
-import android.content.Intent;
-import android.content.ServiceConnection;
-import android.content.res.Resources;
-import android.location.Location;
-import android.os.IBinder;
+import android.support.annotation.NonNull;
+import android.support.design.widget.NavigationView;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
-import android.view.View;
-import android.widget.TextView;
-
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
-import fr.rtwo.gpstracker.acquisition.AcquisitionService;
+import android.view.MenuItem;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
 
-    private class AcqListener implements AcquisitionService.Listener {
+    private ActionBarDrawerToggle mToggle;
+
+    private NavigationView.OnNavigationItemSelectedListener
+            mNavItemListener = new NavigationView.OnNavigationItemSelectedListener() {
         @Override
-        public void onNewLocation(Location location) {
-            Resources resources = getResources();
+        public boolean onNavigationItemSelected(@NonNull MenuItem item) {
 
-            // Update position count
-            TextView tvPosCount = (TextView) findViewById(R.id.positionsCount);
-            int count = mAcqService.getLocationCount();
+            DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+            drawer.closeDrawer(GravityCompat.START);
 
-            Log.i(TAG, count + " locations");
-            tvPosCount.setText(resources.getString(R.string.textViewPosition, count));
-
-            // Update last position
-            SimpleDateFormat dateFormater = new SimpleDateFormat("yyyy/MM/dd HH:mm");
-
-            TextView tvLastPos = (TextView) findViewById(R.id.lastPosition);
-            tvLastPos.setText(resources.getString(
-                    R.string.textViewLastPosition,
-                    dateFormater.format(new Date(location.getTime()))));
-        }
-    }
-
-    // AcquisitionService variables
-    private boolean mAcqServiceBound = false;
-    private AcquisitionService mAcqService;
-    private AcqListener mAcqServiceListerner = new AcqListener();
-
-    private ServiceConnection mAcqServiceConnection = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName className,
-                                       IBinder service) {
-            AcquisitionService.LocalBinder binder = (AcquisitionService.LocalBinder) service;
-            mAcqService = binder.getService();
-            mAcqService.registerListener(mAcqServiceListerner);
-            mAcqServiceBound = true;
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName arg0) {
-            mAcqService = null;
-            mAcqServiceBound = false;
+            return true;
         }
     };
 
-    public void startGpsRecording(View v) {
-        if (mAcqServiceBound)
-            return;
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
 
-        Log.i(TAG, "Start GPS recording");
+        setContentView(R.layout.main);
 
-        // Start acquisition service
-        Intent startIntent = new Intent(this, AcquisitionService.class);
-        startService(startIntent);
+        // Attach toolbar
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
 
-        // Bind to acquisition service
-        Intent bindItent = new Intent(this, AcquisitionService.class);
-        bindService(bindItent, mAcqServiceConnection, 0);
+        // Attach navigation
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
 
-        TextView tv = (TextView) findViewById(R.id.state);
-        tv.setText(R.string.textViewStateStarted);
-    }
+        mToggle = new ActionBarDrawerToggle(
+                this, drawer, toolbar, R.string.navDrawerOpen, R.string.navDrawerClose);
 
-    public void stopGpsRecording(View v) {
-        if (!mAcqServiceBound)
-            return;
+        drawer.addDrawerListener(mToggle);
+        mToggle.syncState();
 
-        Log.i(TAG, "Stop GPS recording");
+        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+        navigationView.setNavigationItemSelectedListener(mNavItemListener);
 
-        // Stop GPS acquisition
-        unbindService(mAcqServiceConnection);
-        mAcqServiceBound = false;
-
-        Intent intent = new Intent(this, AcquisitionService.class);
-        stopService(intent);
-
-        TextView tvState = (TextView) findViewById(R.id.state);
-        tvState.setText(R.string.textViewStateStopped);
-
-        Log.i(TAG, "0 locations");
-        TextView tvCount = (TextView) findViewById(R.id.positionsCount);
-        tvCount.setText(R.string.textViewPositionNone);
+        // Create default fragment
+        Fragment fragment = new FragmentRecord();
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        fragmentManager.beginTransaction().replace(R.id.content_frame, fragment).commit();
     }
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        boolean ret;
-
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+    public void onBackPressed() {
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        if (drawer.isDrawerOpen(GravityCompat.START)) {
+            drawer.closeDrawer(GravityCompat.START);
+        } else {
+            super.onBackPressed();
+        }
     }
 }
