@@ -1,12 +1,15 @@
 package fr.rtwo.gpstracker.acquisition;
 
 import android.app.AlarmManager;
+import android.app.Notification;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.res.Resources;
 import android.location.Location;
 import android.os.Binder;
 import android.os.IBinder;
@@ -18,6 +21,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import fr.rtwo.gpstracker.Config;
+import fr.rtwo.gpstracker.R;
 import fr.rtwo.gpstracker.logs.EventLogger;
 import fr.rtwo.gpstracker.logs.Telemetry;
 import fr.rtwo.gpstracker.logs.Tools;
@@ -40,6 +44,12 @@ public class AcquisitionService extends Service {
     private Telemetry mTelemetry;
     private EventLogger mEventLogger;
     private AlarmManager mAlarmManager;
+
+    // Notifications variables
+    private static final int SERVICE_NOTIFICATION_ID = 1;
+
+    private NotificationManager mNotificationManager;
+    private Notification.Builder mNotificationBuilder;
 
     // Battery varaibles
     private BatteryRecorder mBatteryRecorder;
@@ -64,7 +74,10 @@ public class AcquisitionService extends Service {
     public void onCreate() {
         super.onCreate();
 
+        mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         mAlarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+
+        mNotificationBuilder = new Notification.Builder(this);
 
         // Open record file
         File folder = Tools.createOutputFolder();
@@ -107,6 +120,9 @@ public class AcquisitionService extends Service {
 
         mEventLogger.close();
         mEventLogger = null;
+
+        // Service is not foreground anymore
+        unsetForeground();
     }
 
     @Override
@@ -132,7 +148,30 @@ public class AcquisitionService extends Service {
         startGpsAcq();
         mBatteryRecorder.start();
 
+        // Make service foreground
+        setForeground();
+
         return START_STICKY;
+    }
+
+    // Foreground management
+    private void setForeground() {
+        mNotificationBuilder.setContentTitle(getString(R.string.notifAcqServiceTitle));
+        mNotificationBuilder.setContentText(getString(R.string.notifAcqServiceMessage, 0));
+        mNotificationBuilder.setSmallIcon(R.drawable.ic_notif_acq_service);
+
+        startForeground(SERVICE_NOTIFICATION_ID, mNotificationBuilder.build());
+    }
+
+    private void unsetForeground() {
+        stopForeground(true);
+    }
+
+    private void updateForeground() {
+        String msg = getString(R.string.notifAcqServiceMessage, mRecordedLocations);
+        mNotificationBuilder.setContentText(msg);
+
+        mNotificationManager.notify(SERVICE_NOTIFICATION_ID , mNotificationBuilder.build());
     }
 
     // Listerner management
@@ -185,6 +224,8 @@ public class AcquisitionService extends Service {
             Log.i(TAG, "GPS: New location");
 
             mRecordedLocations++;
+            updateForeground();
+
             for (Listener e : mListeners) {
                 e.onNewLocation(location);
             }
