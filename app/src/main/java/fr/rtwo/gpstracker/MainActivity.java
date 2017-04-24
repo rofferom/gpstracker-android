@@ -1,6 +1,7 @@
 package fr.rtwo.gpstracker;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
@@ -19,6 +20,8 @@ import android.view.MenuItem;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import fr.rtwo.gpstracker.acquisition.AcquisitionService;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
@@ -120,6 +123,14 @@ public class MainActivity extends AppCompatActivity {
             Fragment fragment = new FragmentRecord();
             mFragmentManager.beginTransaction().replace(R.id.content_frame, fragment).commit();
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        Intent intent = new Intent(this, AcquisitionService.class);
+        stopService(intent);
+
+        super.onDestroy();
     }
 
     @Override

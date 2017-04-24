@@ -106,6 +106,8 @@ public class AcquisitionService extends Service {
     public void onDestroy() {
         super.onDestroy();
 
+        Log.i(TAG, "AcquisitionService destroyed");
+
         // Stop GPS
         unregisterReceiver(mGpsTimerReceiver);
 
@@ -132,7 +134,7 @@ public class AcquisitionService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.i(TAG, "onStartCommand()");
+        Log.i(TAG, "AcquisitionService started");
 
         // Write config in telemetry file.
         // Required to understand generated stats
