@@ -47,7 +47,7 @@ public class FragmentRecord extends Fragment {
         }
     }
 
-    private Activity mActivity;
+    private MainActivity mActivity;
     private View mView;
 
     // AcquisitionService variables
@@ -74,7 +74,7 @@ public class FragmentRecord extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         mView = inflater.inflate(R.layout.fragment_record, container, false);
-        mActivity = getActivity();
+        mActivity = (MainActivity) getActivity();
 
         Button startButton = (Button) mView.findViewById(R.id.startRecording);
         startButton.setOnClickListener(mStartGpsRecording);
@@ -88,8 +88,12 @@ public class FragmentRecord extends Fragment {
     private View.OnClickListener mStartGpsRecording = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
+            if (!mActivity.getHasPermissions())
+                return;
+
             if (mAcqServiceBound)
                 return;
+
             Log.i(TAG, "Start GPS recording");
             // Start acquisition service
             Intent startIntent = new Intent(mActivity, AcquisitionService.class);
@@ -105,6 +109,9 @@ public class FragmentRecord extends Fragment {
     private View.OnClickListener mStopGpsRecording = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
+            if (!mActivity.getHasPermissions())
+                return;
+
             if (!mAcqServiceBound)
                 return;
 
