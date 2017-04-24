@@ -13,7 +13,7 @@
     <string name="textViewLastPositionNone">No last position</string>
     <string name="textViewLastPosition">Last position: %s</string>
 
-    <string name="navDrawerOpen">Close</string>
+    <string name="navDrawerOpen">Open</string>
     <string name="navDrawerClose">Close</string>
 
     <string name="notifAcqServiceTitle">Acquisition in progress</string>
