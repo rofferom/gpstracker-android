@@ -66,6 +66,7 @@ public class FragmentRecord extends Fragment {
 
         @Override
         public void onServiceDisconnected(ComponentName arg0) {
+            mAcqService.unregisterListener(mAcqServiceListerner);
             mAcqService = null;
             mAcqServiceBound = false;
         }
@@ -83,6 +84,16 @@ public class FragmentRecord extends Fragment {
         stopButton.setOnClickListener(mStopGpsRecording);
 
         return mView;
+    }
+
+    @Override
+    public void onDestroyView() {
+        if (mAcqServiceBound) {
+            mAcqService.unregisterListener(mAcqServiceListerner);
+            mActivity.unbindService(mAcqServiceConnection);
+        }
+
+        super.onDestroyView();
     }
 
     private View.OnClickListener mStartGpsRecording = new View.OnClickListener() {
