@@ -171,8 +171,12 @@ public class AcquisitionService extends Service {
     }
 
     private void clearGpsAcqTimer() {
-        mAlarmManager.cancel(mGpsPendingIntent);
-        mGpsPendingIntent = null;
+        // The intent can be null because it is set after the first location received,
+        // to prepare the next acquisition.
+        if (mGpsPendingIntent != null) {
+            mAlarmManager.cancel(mGpsPendingIntent);
+            mGpsPendingIntent = null;
+        }
     }
 
     private class GpsListener implements GpsRecorder.Listener {
