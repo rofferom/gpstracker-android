@@ -362,7 +362,8 @@ def parseTelemetryFile(path, args):
 	gpsGeneralStats.displayResult()
 	batteryHandler.displayResult()
 
-	accuracyChartPath = os.path.dirname(path) + "/accuracyChart.html"
+	outFolder = os.path.dirname(os.path.abspath(path))
+	accuracyChartPath = "%s/accuracyChart.html" % outFolder
 	print("Generate accuracy chart: %s" % accuracyChartPath)
 	gpsAccuracyStats.genChart(accuracyChartPath)
 
