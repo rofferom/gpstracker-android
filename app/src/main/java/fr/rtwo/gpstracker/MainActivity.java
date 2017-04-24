@@ -24,6 +24,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
 
     private ActionBarDrawerToggle mToggle;
+    private FragmentManager mFragmentManager;
 
     private NavigationView.OnNavigationItemSelectedListener
             mNavItemListener = new NavigationView.OnNavigationItemSelectedListener() {
@@ -113,9 +114,12 @@ public class MainActivity extends AppCompatActivity {
         navigationView.setNavigationItemSelectedListener(mNavItemListener);
 
         // Create default fragment
-        Fragment fragment = new FragmentRecord();
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        fragmentManager.beginTransaction().replace(R.id.content_frame, fragment).commit();
+        if (savedInstanceState == null) {
+            mFragmentManager = getSupportFragmentManager();
+
+            Fragment fragment = new FragmentRecord();
+            mFragmentManager.beginTransaction().replace(R.id.content_frame, fragment).commit();
+        }
     }
 
     @Override
