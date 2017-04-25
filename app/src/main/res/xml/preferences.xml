@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <EditTextPreference
+        android:key="pref_gps_accuracy"
+        android:inputType="number"
+        android:title="@string/pref_gps_accuracy_title"
+        android:summary="@string/pref_gps_accuracy_summary"
+        android:defaultValue="6.0" />
+
+    <EditTextPreference
+        android:key="pref_gps_period"
+        android:inputType="number"
+        android:title="@string/pref_gps_period_title"
+        android:summary="@string/pref_gps_period_summary"
+        android:defaultValue="60" />
+
+    <EditTextPreference
+        android:key="pref_gps_timeout"
+        android:inputType="number"
+        android:title="@string/pref_gps_timeout_title"
+        android:summary="@string/pref_gps_timeout_summary"
+        android:defaultValue="45" />
+</PreferenceScreen>

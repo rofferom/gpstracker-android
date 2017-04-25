@@ -47,7 +47,6 @@ public class AcquisitionService extends Service {
     private List<Listener> mListeners = new LinkedList<Listener>();
 
     // Globals
-    private Config mConfig = Config.getInstance();
     private Telemetry mTelemetry;
     private EventLogger mEventLogger;
     private AlarmManager mAlarmManager;
@@ -62,10 +61,12 @@ public class AcquisitionService extends Service {
     private BatteryRecorder mBatteryRecorder;
 
     // Gps variables
+    private long mGpsAcqPeriod;
     private GpsRecorder mGpsRecorder;
     private GpsListener mGpsRecorderListener;
     private GpsTimerReceiver mGpsTimerReceiver = new GpsTimerReceiver();
     private PendingIntent mGpsPendingIntent;
+
     private int mRecordedLocations = 0;
     private Location mLastLocation = null;
 
@@ -144,16 +145,19 @@ public class AcquisitionService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        Config config = Config.getInstance();
+
         Log.i(TAG, "AcquisitionService started");
+        mGpsAcqPeriod = config.getGpsAcqPeriod();
 
         // Write config in telemetry file.
         // Required to understand generated stats
         mTelemetry.write(Telemetry.APP_TAG,
                 String.format(
                     Telemetry.APP_CONFIG,
-                    mConfig.mGpsAccuracy,
-                    mConfig.mGpsAcqPeriod,
-                    mConfig.mGpsAcqTimeout)
+                    config.getGpsAccuracy(),
+                    mGpsAcqPeriod,
+                    config.getGpsAcqTimeout())
                 );
 
         // Start subcomponents
@@ -223,7 +227,7 @@ public class AcquisitionService extends Service {
                 PendingIntent.FLAG_UPDATE_CURRENT);
 
         mAlarmManager.set(AlarmManager.ELAPSED_REALTIME_WAKEUP,
-                SystemClock.elapsedRealtime() + mConfig.mGpsAcqPeriod * 1000,
+                SystemClock.elapsedRealtime() + mGpsAcqPeriod * 1000,
                 mGpsPendingIntent);
     }
 

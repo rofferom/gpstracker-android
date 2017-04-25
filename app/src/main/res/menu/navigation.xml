@@ -6,4 +6,9 @@
         android:id="@+id/nav_record"
         android:icon="@drawable/ic_menu_record"
         android:title="Record session"/>
+
+    <item
+        android:id="@+id/nav_preferences"
+        android:icon="@drawable/ic_settings"
+        android:title="Settings"/>
 </menu>

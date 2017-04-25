@@ -20,10 +20,12 @@ public class GpsRecorder {
     }
 
     // General attributes
-    private Config mConfig = Config.getInstance();
     private State mState = State.stopped;
     private Listener mListener;
     private Telemetry mTelemetry;
+
+    private float mGpsAccuracy;
+    private long mGpsAcqTimeout;
 
     private LocationManager mLocationManager;
     private LocationListener mLocationListener;
@@ -36,6 +38,11 @@ public class GpsRecorder {
     }
 
     GpsRecorder(Context context, Listener listener, Telemetry telemetry) {
+        Config config = Config.getInstance();
+
+        mGpsAccuracy = config.getGpsAccuracy();
+        mGpsAcqTimeout = config.getGpsAcqTimeout();
+
         mListener = listener;
         mTelemetry = telemetry;
 
@@ -77,7 +84,7 @@ public class GpsRecorder {
                     onLocationTimeout();
                 }
             },
-            mConfig.mGpsAcqTimeout * 1000);
+            mGpsAcqTimeout * 1000);
     }
 
     public void stop() {
@@ -111,7 +118,7 @@ public class GpsRecorder {
                         location.getSpeed()));
 
         Log.d(TAG, "New position: " + location.getLatitude() + ", " + location.getLongitude());
-        if (accuracy <= mConfig.mGpsAccuracy) {
+        if (accuracy <= mGpsAccuracy) {
             Log.d(TAG, "Position stored (accuracy : " + accuracy + ")");
 
             mTelemetry.write(Telemetry.GPS_TAG, Telemetry.GPS_VALID_POINT);

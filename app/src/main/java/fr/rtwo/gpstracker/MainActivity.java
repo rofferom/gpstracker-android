@@ -15,6 +15,7 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.MenuItem;
 
 import java.util.ArrayList;
@@ -26,6 +27,8 @@ import fr.rtwo.gpstracker.acquisition.AcquisitionService;
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
 
+    private Config mConfig = Config.getInstance();
+
     private ActionBarDrawerToggle mToggle;
     private FragmentManager mFragmentManager;
 
@@ -33,6 +36,19 @@ public class MainActivity extends AppCompatActivity {
             mNavItemListener = new NavigationView.OnNavigationItemSelectedListener() {
         @Override
         public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+            Fragment fragment;
+            int id = item.getItemId();
+
+            if (id == R.id.nav_record) {
+                fragment = new FragmentRecord();
+            } else if (id == R.id.nav_preferences) {
+                fragment = new FragmentPreferences();
+            } else {
+                Log.e(TAG, "onNavigationItemSelected(): Unknown id " + id);
+                return false;
+            }
+
+            mFragmentManager.beginTransaction().replace(R.id.content_frame, fragment).commit();
 
             DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
             drawer.closeDrawer(GravityCompat.START);
@@ -120,6 +136,8 @@ public class MainActivity extends AppCompatActivity {
 
         // Create default fragment
         if (savedInstanceState == null) {
+            // Load stored configuration
+            mConfig.loadValues(this);
 
             Fragment fragment = new FragmentRecord();
             mFragmentManager.beginTransaction().replace(R.id.content_frame, fragment).commit();
