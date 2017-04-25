@@ -231,8 +231,9 @@ class GpsGeneralStats(GpsHandlerCb):
 		print("Accuracy of valid points")
 		self.displayMinMaxAverage(self.validAccuracyList)
 
-		print("Accuracy of last points before timeout")
-		self.displayMinMaxAverage(self.timeoutAccuracyList)
+		if len(self.timeoutAccuracyList) > 0:
+			print("Accuracy of last points before timeout")
+			self.displayMinMaxAverage(self.timeoutAccuracyList)
 
 class GpsHandler:
 	def __init__(self, sinks):
