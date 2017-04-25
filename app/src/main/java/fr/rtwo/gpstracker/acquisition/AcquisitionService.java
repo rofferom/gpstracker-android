@@ -35,6 +35,13 @@ public class AcquisitionService extends Service {
         void onNewLocation(Location location);
     }
 
+    // Lifecycle
+    private static boolean sStarted  = false;
+
+    public static boolean isStarted() {
+        return sStarted;
+    }
+
     // Service API
     private final IBinder mBinder = new LocalBinder();
     private List<Listener> mListeners = new LinkedList<Listener>();
@@ -60,6 +67,7 @@ public class AcquisitionService extends Service {
     private GpsTimerReceiver mGpsTimerReceiver = new GpsTimerReceiver();
     private PendingIntent mGpsPendingIntent;
     private int mRecordedLocations = 0;
+    private Location mLastLocation = null;
 
     public class LocalBinder extends Binder {
         public AcquisitionService getService() {
@@ -125,6 +133,8 @@ public class AcquisitionService extends Service {
 
         // Service is not foreground anymore
         unsetForeground();
+
+        sStarted = false;
     }
 
     @Override
@@ -152,6 +162,8 @@ public class AcquisitionService extends Service {
 
         // Make service foreground
         setForeground();
+
+        sStarted = true;
 
         return START_STICKY;
     }
@@ -191,6 +203,10 @@ public class AcquisitionService extends Service {
         return mRecordedLocations;
     }
 
+    public Location getLastLocation() {
+        return mLastLocation;
+    }
+
     private void startGpsAcq() {
         mGpsRecorder.start();
     }
@@ -226,6 +242,7 @@ public class AcquisitionService extends Service {
             Log.i(TAG, "GPS: New location");
 
             mRecordedLocations++;
+            mLastLocation = location;
             updateForeground();
 
             for (Listener e : mListeners) {

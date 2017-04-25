@@ -116,21 +116,14 @@ public class MainActivity extends AppCompatActivity {
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(mNavItemListener);
 
+        mFragmentManager = getSupportFragmentManager();
+
         // Create default fragment
         if (savedInstanceState == null) {
-            mFragmentManager = getSupportFragmentManager();
 
             Fragment fragment = new FragmentRecord();
             mFragmentManager.beginTransaction().replace(R.id.content_frame, fragment).commit();
         }
-    }
-
-    @Override
-    protected void onDestroy() {
-        Intent intent = new Intent(this, AcquisitionService.class);
-        stopService(intent);
-
-        super.onDestroy();
     }
 
     @Override

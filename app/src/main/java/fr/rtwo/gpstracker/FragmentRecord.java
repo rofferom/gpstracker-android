@@ -24,32 +24,22 @@ import fr.rtwo.gpstracker.acquisition.AcquisitionService;
 public class FragmentRecord extends Fragment {
     private static final String TAG = "FragmentRecord";
 
-    private static final String ACQSERVICEBOUND_KEY = "acqServiceBound";
-    private static final String STATE_KEY = "state";
-    private static final String POSITIONCOUNT_KEY = "positionCount";
-    private static final String LASTPOSITION_KEY = "lastPosition";
 
     private class AcqListener implements AcquisitionService.Listener {
         @Override
         public void onNewLocation(Location location) {
-            Resources resources = getResources();
-
             // Update position count
             int count = mAcqService.getLocationCount();
 
             Log.i(TAG, count + " locations");
-            mTvPositionCount.setText(resources.getString(R.string.textViewPosition, count));
-
-            // Update last position
-            SimpleDateFormat dateFormater = new SimpleDateFormat("yyyy/MM/dd HH:mm");
-            mTvLastPosition.setText(resources.getString(
-                    R.string.textViewLastPosition,
-                    dateFormater.format(new Date(location.getTime()))));
+            updateLocationCount(count);
+            updateLastLocation(location);
         }
     }
 
     private MainActivity mActivity;
     private View mView;
+    private Resources mResources;
 
     // Layout
     private TextView mTvState;
@@ -68,6 +58,14 @@ public class FragmentRecord extends Fragment {
             mAcqService = binder.getService();
             mAcqService.registerListener(mAcqServiceListerner);
             mAcqServiceBound = true;
+
+            // Update UI
+            mTvState.setText(R.string.textViewStateStarted);
+            updateLocationCount(mAcqService.getLocationCount());
+
+            Location lastLocation = mAcqService.getLastLocation();
+            if (lastLocation != null)
+                updateLastLocation(lastLocation);
         }
 
         @Override
@@ -82,6 +80,7 @@ public class FragmentRecord extends Fragment {
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         mView = inflater.inflate(R.layout.fragment_record, container, false);
         mActivity = (MainActivity) getActivity();
+        mResources = getResources();
 
         Button startButton = (Button) mView.findViewById(R.id.startRecording);
         startButton.setOnClickListener(mStartGpsRecording);
@@ -93,16 +92,8 @@ public class FragmentRecord extends Fragment {
         mTvPositionCount = (TextView) mView.findViewById(R.id.positionsCount);
         mTvLastPosition = (TextView) mView.findViewById(R.id.lastPosition);
 
-        if (savedInstanceState != null) {
-            mAcqServiceBound = savedInstanceState.getBoolean(ACQSERVICEBOUND_KEY);
-            if (mAcqServiceBound)
-                bindToAcqService();
-
-            // Restore state
-            mTvState.setText(savedInstanceState.getCharSequence(STATE_KEY));
-            mTvPositionCount.setText(savedInstanceState.getCharSequence(POSITIONCOUNT_KEY));
-            mTvLastPosition.setText(savedInstanceState.getCharSequence(LASTPOSITION_KEY));
-        }
+        if (AcquisitionService.isStarted())
+            bindToAcqService();
 
         return mView;
     }
@@ -115,21 +106,6 @@ public class FragmentRecord extends Fragment {
         }
 
         super.onDestroyView();
-    }
-
-    @Override
-    public void onSaveInstanceState(Bundle outState) {
-        TextView tv;
-
-        // Save "bounded"
-        outState.putBoolean(ACQSERVICEBOUND_KEY, mAcqServiceBound);
-
-        // Save TextView
-        outState.putCharSequence(STATE_KEY, mTvState.getText());
-        outState.putCharSequence(POSITIONCOUNT_KEY, mTvPositionCount.getText());
-        outState.putCharSequence(LASTPOSITION_KEY, mTvLastPosition.getText());
-
-        super.onSaveInstanceState(outState);
     }
 
     private void bindToAcqService() {
@@ -152,7 +128,6 @@ public class FragmentRecord extends Fragment {
             mActivity.startService(startIntent);
             // Bind to acquisition service
             bindToAcqService();
-            mTvState.setText(R.string.textViewStateStarted);
         }
     };
 
@@ -174,10 +149,22 @@ public class FragmentRecord extends Fragment {
             Intent intent = new Intent(mActivity, AcquisitionService.class);
             mActivity.stopService(intent);
 
+            // Update UI
             mTvState.setText(R.string.textViewStateStopped);
 
             Log.i(TAG, "0 locations");
             mTvPositionCount.setText(R.string.textViewPositionNone);
         }
     };
+
+    private void updateLocationCount(int count) {
+        mTvPositionCount.setText(mResources.getString(R.string.textViewPosition, count));
+    }
+
+    private void updateLastLocation(Location location) {
+        SimpleDateFormat dateFormater = new SimpleDateFormat("yyyy/MM/dd HH:mm");
+        mTvLastPosition.setText(mResources.getString(
+                R.string.textViewLastPosition,
+                dateFormater.format(new Date(location.getTime()))));
+    }
 }
