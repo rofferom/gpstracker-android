@@ -22,7 +22,7 @@ def getLocationList(path):
 
 def generateHtml(locationList, outPath):
 	sourcePath = os.path.dirname(os.path.abspath(__file__))
-	templateFile = open('%s/map.template' % sourcePath, 'r')
+	templateFile = open(os.path.join(sourcePath, 'map.template'), 'r')
 	template = jinja2.Template(templateFile.read())
 
 	html = template.render(locationList=locationList)
