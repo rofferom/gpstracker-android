@@ -58,6 +58,9 @@ class GpsHandlerCb:
 	def startAcq(self, ts):
 		pass
 
+	def manualAcq(self, ts):
+		pass
+
 	def timeout(self, ts):
 		pass
 
@@ -163,6 +166,7 @@ class GpsGeneralStats(GpsHandlerCb):
 		self.startAcqCount = 0
 		self.validCount = 0
 		self.timeoutCount = 0
+		self.manualAcqCount = 0
 		self.rawAccuracyList = []
 		self.validAccuracyList = []
 
@@ -175,6 +179,9 @@ class GpsGeneralStats(GpsHandlerCb):
 	def startAcq(self, ts):
 		self.startAcqCount += 1
 		self.lastStartAcqTs = ts
+
+	def manualAcq(self, ts):
+		self.manualAcqCount += 1
 
 	def timeout(self, ts):
 		self.timeoutCount += 1
@@ -209,7 +216,7 @@ class GpsGeneralStats(GpsHandlerCb):
 
 	def displayResult(self):
 		# Count
-		print("%d acquisitions" % self.startAcqCount)
+		print("%d acquisitions (%d manuals)" % (self.startAcqCount, self.manualAcqCount))
 
 		validPercentage = (self.validCount / self.startAcqCount) * 100
 		print("\t%d valid points (%.02f%%)" % (self.validCount, validPercentage))
@@ -244,6 +251,7 @@ class GpsHandler:
 		self.recordDescList = {
 			"StartAcq":   Record(handler=self.handleStartAcq,   hasArgs=False),
 			"StopAcq":    Record(handler=self.handleStopAcq,    hasArgs=False),
+			"ManualAcq":  Record(handler=self.handleManualAcq,  hasArgs=False),
 			"Timeout":    Record(handler=self.handleTimeout,    hasArgs=False),
 			"ValidPoint": Record(handler=self.handleValidPoint, hasArgs=False),
 			"Location":   Record(handler=self.handleLocation,   hasArgs=True),
@@ -263,6 +271,10 @@ class GpsHandler:
 
 	def handleStopAcq(self, ts):
 		pass
+
+	def handleManualAcq(self, ts):
+		for sink in self.sinks:
+			sink.manualAcq(ts)
 
 	def handleTimeout(self, ts):
 		if self.forcedAccuracy and self.validPointBroadcasted:

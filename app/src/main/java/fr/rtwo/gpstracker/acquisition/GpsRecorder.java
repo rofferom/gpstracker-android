@@ -31,9 +31,10 @@ public class GpsRecorder {
     private LocationListener mLocationListener;
     private Location mLastLocation = null;
     private Timer mTimeoutTimer = new Timer();
+    private boolean mManualAcq = false;
 
     public interface Listener {
-        void onNewLocation(Location location);
+        void onNewLocation(Location location, boolean isManualAcq);
         void onTimeout();
     }
 
@@ -99,9 +100,19 @@ public class GpsRecorder {
         }
 
         mState = State.stopped;
+        mManualAcq = false;
         mLastLocation = null;
 
         mTimeoutTimer.clear();
+    }
+
+    public void manualAcq() {
+        Log.i(TAG, "Request manual acquisition");
+        mManualAcq = true;
+        if (mState == State.stopped)
+            start();
+        else
+            Log.i(TAG, "Acquisition already in progress");
     }
 
     private void onNewLocation(Location location) {
@@ -124,7 +135,7 @@ public class GpsRecorder {
             mTelemetry.write(Telemetry.GPS_TAG, Telemetry.GPS_VALID_POINT);
 
             if (mListener != null)
-                mListener.onNewLocation(location);
+                mListener.onNewLocation(location, mManualAcq);
 
             stop();
         } else {

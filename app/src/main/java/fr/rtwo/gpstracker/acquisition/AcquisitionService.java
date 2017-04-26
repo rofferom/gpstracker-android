@@ -211,6 +211,12 @@ public class AcquisitionService extends Service {
         return mLastLocation;
     }
 
+    public void manualAcq() {
+        mTelemetry.write(Telemetry.GPS_TAG, Telemetry.GPS_MANUAL_ACQ);
+        clearGpsAcqTimer();
+        mGpsRecorder.manualAcq();
+    }
+
     private void startGpsAcq() {
         mGpsRecorder.start();
     }
@@ -242,8 +248,11 @@ public class AcquisitionService extends Service {
 
     private class GpsListener implements GpsRecorder.Listener {
         @Override
-        public void onNewLocation(Location location) {
-            Log.i(TAG, "GPS: New location");
+        public void onNewLocation(Location location, boolean isManualAcq) {
+            if (isManualAcq)
+                Log.i(TAG, "GPS: New manual location");
+            else
+                Log.i(TAG, "GPS: New location");
 
             mRecordedLocations++;
             mLastLocation = location;

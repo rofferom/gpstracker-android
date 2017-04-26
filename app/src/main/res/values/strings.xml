@@ -3,6 +3,7 @@
 
     <string name="startRecording">Start recording</string>
     <string name="stopRecording">Stop recording</string>
+    <string name="manualAcq">Manual acquisition</string>
 
     <string name="textViewStateStarted">State: Started</string>
     <string name="textViewStateStopped">State: Stopped</string>

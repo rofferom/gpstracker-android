@@ -88,6 +88,9 @@ public class FragmentRecord extends Fragment {
         Button stopButton = (Button) mView.findViewById(R.id.stopRecording);
         stopButton.setOnClickListener(mStopGpsRecording);
 
+        Button manualAcqButton = (Button) mView.findViewById(R.id.manualAcq);
+        manualAcqButton.setOnClickListener(mManualGpsAcq);
+
         mTvState = (TextView) mView.findViewById(R.id.state);
         mTvPositionCount = (TextView) mView.findViewById(R.id.positionsCount);
         mTvLastPosition = (TextView) mView.findViewById(R.id.lastPosition);
@@ -154,6 +157,20 @@ public class FragmentRecord extends Fragment {
 
             Log.i(TAG, "0 locations");
             mTvPositionCount.setText(R.string.textViewPositionNone);
+        }
+    };
+
+    private View.OnClickListener mManualGpsAcq = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            if (!mActivity.getHasPermissions())
+                return;
+
+            if (!mAcqServiceBound)
+                return;
+
+            // Stop GPS acquisition
+            mAcqService.manualAcq();
         }
     };
 

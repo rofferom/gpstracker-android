@@ -21,6 +21,12 @@
             android:layout_height="wrap_content"
             android:id="@+id/stopRecording"/>
 
+        <Button
+            android:id="@+id/manualAcq"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/manualAcq"/>
+
         <TextView
             android:text="@string/textViewStateStopped"
             android:layout_width="match_parent"

@@ -18,6 +18,7 @@ public class Telemetry {
 
     static public final String GPS_START_ACQ       = "StartAcq";
     static public final String GPS_STOP_ACQ        = "StopAcq";
+    static public final String GPS_MANUAL_ACQ      = "ManualAcq";
     static public final String GPS_TIMEOUT         = "Timeout";
     static public final String GPS_VALID_POINT     = "ValidPoint";
     static public final String GPS_LOCATION_FORMAT = "Location;ts:%d;lat:%f;long:%f;accuracy:%f;speed:%f";
