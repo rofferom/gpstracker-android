@@ -9,7 +9,7 @@
     <string name="textViewStateStopped">State: Stopped</string>
 
     <string name="textViewPositionNone">No positions recorded</string>
-    <string name="textViewPosition">Positions: %d</string>
+    <string name="textViewPosition" formatted="false">Positions: %d - Timeouts: %d</string>
 
     <string name="textViewLastPositionNone">No last position</string>
     <string name="textViewLastPosition">Last position: %s</string>
@@ -18,7 +18,7 @@
     <string name="navDrawerClose">Close</string>
 
     <string name="notifAcqServiceTitle">Acquisition in progress</string>
-    <string name="notifAcqServiceMessage">%d positions</string>
+    <string name="notifAcqServiceMessage" formatted="false">%d positions - %d timeouts</string>
 
     <string name="pref_gps_accuracy_title">GPS accuracy</string>
     <string name="pref_gps_accuracy_summary">Accuracy required to accept a location (meters)</string>

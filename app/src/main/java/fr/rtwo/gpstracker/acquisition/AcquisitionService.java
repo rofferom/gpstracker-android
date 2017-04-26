@@ -33,6 +33,7 @@ public class AcquisitionService extends Service {
 
     public interface Listener {
         void onNewLocation(Location location);
+        void onTimeout();
     }
 
     // Lifecycle
@@ -68,6 +69,7 @@ public class AcquisitionService extends Service {
     private PendingIntent mGpsPendingIntent;
 
     private int mRecordedLocations = 0;
+    private int mRecordedTimeouts = 0;
     private Location mLastLocation = null;
 
     public class LocalBinder extends Binder {
@@ -175,7 +177,7 @@ public class AcquisitionService extends Service {
     // Foreground management
     private void setForeground() {
         mNotificationBuilder.setContentTitle(getString(R.string.notifAcqServiceTitle));
-        mNotificationBuilder.setContentText(getString(R.string.notifAcqServiceMessage, 0));
+        mNotificationBuilder.setContentText(getString(R.string.notifAcqServiceMessage, 0, 0));
         mNotificationBuilder.setSmallIcon(R.drawable.ic_notif_acq_service);
 
         startForeground(SERVICE_NOTIFICATION_ID, mNotificationBuilder.build());
@@ -186,7 +188,7 @@ public class AcquisitionService extends Service {
     }
 
     private void updateForeground() {
-        String msg = getString(R.string.notifAcqServiceMessage, mRecordedLocations);
+        String msg = getString(R.string.notifAcqServiceMessage, mRecordedLocations, mRecordedTimeouts);
         mNotificationBuilder.setContentText(msg);
 
         mNotificationManager.notify(SERVICE_NOTIFICATION_ID , mNotificationBuilder.build());
@@ -205,6 +207,10 @@ public class AcquisitionService extends Service {
     // GPS management
     public int getLocationCount() {
         return mRecordedLocations;
+    }
+
+    public int getTimeoutCount() {
+        return mRecordedTimeouts;
     }
 
     public Location getLastLocation() {
@@ -269,6 +275,13 @@ public class AcquisitionService extends Service {
         @Override
         public void onTimeout() {
             Log.i(TAG, "GPS: Timeout");
+            mRecordedTimeouts++;
+            updateForeground();
+
+            for (Listener e : mListeners) {
+                e.onTimeout();
+            }
+
             setGpsAcqTimer();
         }
     }

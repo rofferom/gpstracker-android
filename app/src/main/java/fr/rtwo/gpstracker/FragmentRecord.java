@@ -30,10 +30,20 @@ public class FragmentRecord extends Fragment {
         public void onNewLocation(Location location) {
             // Update position count
             int count = mAcqService.getLocationCount();
+            int timeoutCount = mAcqService.getTimeoutCount();
 
             Log.i(TAG, count + " locations");
-            updateLocationCount(count);
+            updateLocationCount(count, timeoutCount);
             updateLastLocation(location);
+        }
+
+        @Override
+        public void onTimeout() {
+            // Update position count
+            int count = mAcqService.getLocationCount();
+            int timeoutCount = mAcqService.getTimeoutCount();
+
+            updateLocationCount(count, timeoutCount);
         }
     }
 
@@ -61,7 +71,7 @@ public class FragmentRecord extends Fragment {
 
             // Update UI
             mTvState.setText(R.string.textViewStateStarted);
-            updateLocationCount(mAcqService.getLocationCount());
+            updateLocationCount(mAcqService.getLocationCount(), mAcqService.getTimeoutCount());
 
             Location lastLocation = mAcqService.getLastLocation();
             if (lastLocation != null)
@@ -174,8 +184,8 @@ public class FragmentRecord extends Fragment {
         }
     };
 
-    private void updateLocationCount(int count) {
-        mTvPositionCount.setText(mResources.getString(R.string.textViewPosition, count));
+    private void updateLocationCount(int count, int timeoutCount) {
+        mTvPositionCount.setText(mResources.getString(R.string.textViewPosition, count, timeoutCount));
     }
 
     private void updateLastLocation(Location location) {
