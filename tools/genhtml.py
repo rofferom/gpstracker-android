@@ -4,6 +4,7 @@
 import sys
 import os
 import re
+import argparse
 import jinja2
 from collections import namedtuple
 
@@ -41,6 +42,20 @@ def convertFile(srcPath):
 	else:
 		print("Empty file, skipped")
 
-for path in sys.argv[1:]:
-	convertFile(path)
+def parseArgs():
+	parser = argparse.ArgumentParser(description='Generate html files from GpsTracker record files.')
+
+	parser.add_argument("-f", "--files", nargs="+", help="List of files to parse")
+
+	return (parser, parser.parse_args())
+
+if __name__ == '__main__':
+	(argParser, args) = parseArgs()
+
+	# Parse a file list
+	if args.files:
+		for path in args.files:
+			convertFile(path)
+	else:
+		argParser.print_help()
 
