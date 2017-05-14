@@ -20,6 +20,7 @@
 {% for loc in locationList %}
                {
                    "ts": {{ loc.ts }},
+                   "date": "{{ loc.date }}",
                    "lat": {{ loc.lat }},
                    "lon": {{ loc.lon }},
                },
@@ -45,10 +46,9 @@
               var mapsPos = new google.maps.LatLng(position.lat, position.lon)
               bounds.extend(mapsPos)
 
-              var date = new Date(position.ts)
               var markerOptions = {
                   position: mapsPos,
-                  title: date.toLocaleString()
+                  title: position.date
               };
 
               if (i == 0) {

@@ -11,13 +11,13 @@ from collections import namedtuple
 # local packages
 from location import locationFromStr
 
-def getLocationList(path):
+def getLocationList(path, timezone):
 	locationList = []
 
 	f = open(path)
 	lineIdx = 1
 	for line in f:
-		location = locationFromStr(line)
+		location = locationFromStr(line, timezone)
 		if not location:
 			print("Line %d couldn't be parsed : '%s'" % (lineIdx, line))
 		else:
@@ -38,26 +38,26 @@ def generateHtml(locationList, outPath):
 	out = open(outPath, 'w')
 	out.write(html)
 
-def convertFile(srcPath):
+def convertFile(srcPath, timezone):
 	outPath = srcPath.replace(".txt", ".html")
 
 	print("%s => %s" % (srcPath, outPath))
-	locationList = getLocationList(srcPath)
+	locationList = getLocationList(srcPath, timezone)
 	if len(locationList) > 0:
 		generateHtml(locationList, outPath)
 	else:
 		print("Empty file, skipped")
 
-def convertFiles(files):
+def convertFiles(files, timezone):
 	for path in files:
-		convertFile(path)
+		convertFile(path, timezone)
 
-def mergeFiles(files, outPath):
+def mergeFiles(files, outPath, timezone):
 	locationList = []
 
 	for path in files:
 		print("Parsing file %s" % path)
-		locationList.extend(getLocationList(path))
+		locationList.extend(getLocationList(path, timezone))
 
 	if len(locationList) > 0:
 		print("Generate %s" % outPath)
@@ -71,9 +71,9 @@ def convertFileList(filesList, args):
 			print("Missing output path")
 			return False
 
-		mergeFiles(filesList, args.output)
+		mergeFiles(filesList, args.output, args.timezone)
 	else:
-		convertFiles(filesList)
+		convertFiles(filesList, args.timezone)
 
 	return True
 
@@ -103,6 +103,8 @@ def parseArgs():
 
 	parser.add_argument('-m', '--merge', action='store_true', help='Merge inputs to generate only one output file')
 	parser.add_argument("-o", "--output", help="File to generate")
+
+	parser.add_argument("-t", "--timezone", type=int, help="Set timezone of timestamps")
 
 	return (parser, parser.parse_args())
 
