@@ -15,9 +15,15 @@ def getLocationList(path):
 	locationList = []
 
 	f = open(path)
+	lineIdx = 1
 	for line in f:
 		location = locationFromStr(line)
-		locationList.append(location)
+		if not location:
+			print("Line %d couldn't be parsed : '%s'" % (lineIdx, line))
+		else:
+			locationList.append(location)
+
+		lineIdx += 1
 
 	return locationList
 
@@ -59,22 +65,41 @@ def mergeFiles(files, outPath):
 	else:
 		print("No locations found")
 
-def convertFileList(args):
+def convertFileList(filesList, args):
 	if args.merge:
 		if not args.output:
 			print("Missing output path")
 			return False
 
-		mergeFiles(args.files, args.output)
+		mergeFiles(filesList, args.output)
 	else:
-		convertFiles(args.files)
+		convertFiles(filesList)
 
 	return True
+
+def convertDirectory(args):
+	locationsList = []
+	directoryContent = os.listdir(args.directory)
+
+	for item in directoryContent:
+		itemPath = os.path.join(args.directory, item)
+		if not os.path.isdir(itemPath):
+			continue
+
+		locationPath = os.path.join(itemPath, "locations.txt")
+		locationsList.append(locationPath)
+
+	if len(locationsList) == 0:
+		print("No locations.txt file found")
+		return False
+
+	return convertFileList(locationsList, args)
 
 def parseArgs():
 	parser = argparse.ArgumentParser(description='Generate html files from GpsTracker record files.')
 
 	parser.add_argument("-f", "--files", nargs="+", help="List of files to parse")
+	parser.add_argument("-d", "--directory", help="Directory to parse")
 
 	parser.add_argument('-m', '--merge', action='store_true', help='Merge inputs to generate only one output file')
 	parser.add_argument("-o", "--output", help="File to generate")
@@ -86,7 +111,11 @@ if __name__ == '__main__':
 
 	# Parse a file list
 	if args.files:
-		ret = convertFileList(args)
+		ret = convertFileList(args.files, args)
+		if not ret:
+			argParser.print_help()
+	elif args.directory:
+		ret = convertDirectory(args)
 		if not ret:
 			argParser.print_help()
 	else:
