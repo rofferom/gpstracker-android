@@ -67,6 +67,8 @@ public class Telemetry {
             return false;
 
         mWriter.printf("[%d]%s:%s\n", date.getTime(), channel, msg);
+        mWriter.flush();
+
         return true;
     }
 }

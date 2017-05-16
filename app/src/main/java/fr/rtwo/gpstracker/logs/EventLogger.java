@@ -57,5 +57,7 @@ public class EventLogger {
                 location.getLongitude(),
                 location.getAccuracy(),
                 location.getSpeed());
+
+        mWriter.flush();
     }
 }
