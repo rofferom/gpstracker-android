@@ -40,7 +40,7 @@ def formatDate(ts, timezone):
 	return strTs
 
 def locationFromStr(s, timezone=None):
-		pattern = re.compile("ts:(?P<ts>\d*?);lat:(?P<lat>\d*?,\d*?);long:(?P<long>\d*?,\d*?);accuracy:(?P<accuracy>\d*?,\d*?);speed:(?P<speed>\d*?,\d*?)")
+		pattern = re.compile("ts:(?P<ts>\d*?);lat:(?P<lat>-?\d*?,\d*?);long:(?P<long>-?\d*?,\d*?);accuracy:(?P<accuracy>\d*?,\d*?);speed:(?P<speed>\d*?,\d*?)")
 		result = pattern.match(s)
 		if not result:
 			return None
