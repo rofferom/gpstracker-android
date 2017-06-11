@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <EditTextPreference
+        android:key="version"
+        android:title="@string/about_version"
+        android:enabled="false"
+        android:selectable="false"
+        android:persistent="false"
+        android:shouldDisableView="false"/>
+
+    <EditTextPreference
+        android:key="build_date"
+        android:title="@string/about_build_date"
+        android:enabled="false"
+        android:selectable="false"
+        android:persistent="false"
+        android:shouldDisableView="false"/>
+</PreferenceScreen>

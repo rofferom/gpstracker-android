@@ -1,5 +1,18 @@
 apply plugin: 'com.android.application'
 
+def getGitHash = { ->
+    def stdout = new ByteArrayOutputStream()
+    exec {
+        commandLine 'git', 'describe', '--tags', '--dirty'
+        standardOutput = stdout
+    }
+    return stdout.toString().trim()
+}
+
+def getDate() {
+    new Date().format('yyyy/MM/dd HH:mm:ss')
+}
+
 android {
     compileSdkVersion 25
     buildToolsVersion "25.0.2"
@@ -10,6 +23,9 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
+        buildConfigField "String", "GitHash", "\"${getGitHash()}\""
+        buildConfigField "String", "BuildDate", "\"${getDate()}\""
     }
     buildTypes {
         release {

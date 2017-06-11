@@ -29,6 +29,9 @@
     <string name="pref_gps_timeout_title">GPS acquisition timeout</string>
     <string name="pref_gps_timeout_summary">Maximum duration to get a fix (seconds)</string>
 
+    <string name="about_version">Version</string>
+    <string name="about_build_date">Build date</string>
+
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

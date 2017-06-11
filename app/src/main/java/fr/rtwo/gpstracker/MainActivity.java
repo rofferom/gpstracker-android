@@ -43,6 +43,8 @@ public class MainActivity extends AppCompatActivity {
                 fragment = new FragmentRecord();
             } else if (id == R.id.nav_preferences) {
                 fragment = new FragmentPreferences();
+            } else if (id == R.id.nav_about) {
+                fragment = new FragmentAbout();
             } else {
                 Log.e(TAG, "onNavigationItemSelected(): Unknown id " + id);
                 return false;
