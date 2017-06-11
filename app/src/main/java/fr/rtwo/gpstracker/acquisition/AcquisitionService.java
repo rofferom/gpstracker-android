@@ -27,9 +27,37 @@ import fr.rtwo.gpstracker.logs.Telemetry;
 import fr.rtwo.gpstracker.logs.Tools;
 
 public class AcquisitionService extends Service {
+    public class Stats {
+        public int mRecordedLocations = 0;
+        public int mRecordedTimeouts = 0;
+        public Location mLastLocation = null;
+        public List<Boolean> mLastResults = new LinkedList<Boolean>();
+
+        private int getLastResultsCount(boolean val) {
+            int ret = 0;
+
+            for (Boolean b : mLastResults) {
+                if (b == val)
+                    ret++;
+            }
+
+            return ret;
+        }
+
+        public int getLastSuccessCount() {
+            return getLastResultsCount(true);
+        }
+
+        public int getLastTimeoutCount() {
+            return getLastResultsCount(false);
+        }
+    }
+
     private static final String TAG = "AcqService";
 
     private static final String GPS_TIMER_ACTION = "fr.rtwo.gpstracker.gpstimeraction";
+
+    private static final int MAX_POSITION_HISTORY = 5;
 
     public interface Listener {
         void onNewLocation(Location location);
@@ -68,9 +96,7 @@ public class AcquisitionService extends Service {
     private GpsTimerReceiver mGpsTimerReceiver = new GpsTimerReceiver();
     private PendingIntent mGpsPendingIntent;
 
-    private int mRecordedLocations = 0;
-    private int mRecordedTimeouts = 0;
-    private Location mLastLocation = null;
+    private Stats mStats = new Stats();
 
     public class LocalBinder extends Binder {
         public AcquisitionService getService() {
@@ -188,7 +214,7 @@ public class AcquisitionService extends Service {
     }
 
     private void updateForeground() {
-        String msg = getString(R.string.notifAcqServiceMessage, mRecordedLocations, mRecordedTimeouts);
+        String msg = getString(R.string.notifAcqServiceMessage, mStats.mRecordedLocations, mStats.mRecordedTimeouts);
         mNotificationBuilder.setContentText(msg);
 
         mNotificationManager.notify(SERVICE_NOTIFICATION_ID , mNotificationBuilder.build());
@@ -205,16 +231,8 @@ public class AcquisitionService extends Service {
     }
 
     // GPS management
-    public int getLocationCount() {
-        return mRecordedLocations;
-    }
-
-    public int getTimeoutCount() {
-        return mRecordedTimeouts;
-    }
-
-    public Location getLastLocation() {
-        return mLastLocation;
+    public Stats getStats() {
+        return mStats;
     }
 
     public void manualAcq() {
@@ -253,6 +271,13 @@ public class AcquisitionService extends Service {
     }
 
     private class GpsListener implements GpsRecorder.Listener {
+        private void queueNewResult(boolean result) {
+            if (mStats.mLastResults.size() >= MAX_POSITION_HISTORY)
+                mStats.mLastResults.remove(0);
+
+            mStats.mLastResults.add(result);
+        }
+
         @Override
         public void onNewLocation(Location location, boolean isManualAcq) {
             if (isManualAcq)
@@ -260,8 +285,9 @@ public class AcquisitionService extends Service {
             else
                 Log.i(TAG, "GPS: New location");
 
-            mRecordedLocations++;
-            mLastLocation = location;
+            mStats.mRecordedLocations++;
+            mStats.mLastLocation = location;
+            queueNewResult(true);
             updateForeground();
 
             for (Listener e : mListeners) {
@@ -275,7 +301,8 @@ public class AcquisitionService extends Service {
         @Override
         public void onTimeout() {
             Log.i(TAG, "GPS: Timeout");
-            mRecordedTimeouts++;
+            mStats.mRecordedTimeouts++;
+            queueNewResult(false);
             updateForeground();
 
             for (Listener e : mListeners) {

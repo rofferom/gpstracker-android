@@ -24,26 +24,23 @@ import fr.rtwo.gpstracker.acquisition.AcquisitionService;
 public class FragmentRecord extends Fragment {
     private static final String TAG = "FragmentRecord";
 
-
     private class AcqListener implements AcquisitionService.Listener {
         @Override
         public void onNewLocation(Location location) {
             // Update position count
-            int count = mAcqService.getLocationCount();
-            int timeoutCount = mAcqService.getTimeoutCount();
+            AcquisitionService.Stats stats = mAcqService.getStats();
 
-            Log.i(TAG, count + " locations");
-            updateLocationCount(count, timeoutCount);
+            Log.i(TAG, stats.mRecordedLocations + " locations");
+            updateLocationCount(stats);
             updateLastLocation(location);
         }
 
         @Override
         public void onTimeout() {
             // Update position count
-            int count = mAcqService.getLocationCount();
-            int timeoutCount = mAcqService.getTimeoutCount();
+            AcquisitionService.Stats stats = mAcqService.getStats();
 
-            updateLocationCount(count, timeoutCount);
+            updateLocationCount(stats);
         }
     }
 
@@ -54,6 +51,7 @@ public class FragmentRecord extends Fragment {
     // Layout
     private TextView mTvState;
     private TextView mTvPositionCount;
+    private TextView mTvPositionStats;
     private TextView mTvLastPosition;
 
     // AcquisitionService variables
@@ -71,9 +69,11 @@ public class FragmentRecord extends Fragment {
 
             // Update UI
             mTvState.setText(R.string.textViewStateStarted);
-            updateLocationCount(mAcqService.getLocationCount(), mAcqService.getTimeoutCount());
 
-            Location lastLocation = mAcqService.getLastLocation();
+            AcquisitionService.Stats stats = mAcqService.getStats();
+            updateLocationCount(stats);
+
+            Location lastLocation = stats.mLastLocation;
             if (lastLocation != null)
                 updateLastLocation(lastLocation);
         }
@@ -103,6 +103,7 @@ public class FragmentRecord extends Fragment {
 
         mTvState = (TextView) mView.findViewById(R.id.state);
         mTvPositionCount = (TextView) mView.findViewById(R.id.positionsCount);
+        mTvPositionStats = (TextView) mView.findViewById(R.id.positionsStats);
         mTvLastPosition = (TextView) mView.findViewById(R.id.lastPosition);
 
         if (AcquisitionService.isStarted())
@@ -167,6 +168,7 @@ public class FragmentRecord extends Fragment {
 
             Log.i(TAG, "0 locations");
             mTvPositionCount.setText(R.string.textViewPositionNone);
+            mTvPositionStats.setText(R.string.textViewStatsNone);
         }
     };
 
@@ -184,8 +186,12 @@ public class FragmentRecord extends Fragment {
         }
     };
 
-    private void updateLocationCount(int count, int timeoutCount) {
-        mTvPositionCount.setText(mResources.getString(R.string.textViewPosition, count, timeoutCount));
+    private void updateLocationCount(AcquisitionService.Stats stats) {
+        mTvPositionCount.setText(mResources.getString(R.string.textViewPosition,
+                stats.mRecordedLocations, stats.mRecordedTimeouts));
+
+        mTvPositionStats.setText(mResources.getString(R.string.textViewStats,
+                stats.getLastSuccessCount(), stats.getLastTimeoutCount()));
     }
 
     private void updateLastLocation(Location location) {
