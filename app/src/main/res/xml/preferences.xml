@@ -5,14 +5,14 @@
         android:inputType="number"
         android:title="@string/pref_gps_accuracy_title"
         android:summary="@string/pref_gps_accuracy_summary"
-        android:defaultValue="6.0" />
+        android:defaultValue="12.0" />
 
     <EditTextPreference
         android:key="pref_gps_period"
         android:inputType="number"
         android:title="@string/pref_gps_period_title"
         android:summary="@string/pref_gps_period_summary"
-        android:defaultValue="60" />
+        android:defaultValue="90" />
 
     <EditTextPreference
         android:key="pref_gps_timeout"
